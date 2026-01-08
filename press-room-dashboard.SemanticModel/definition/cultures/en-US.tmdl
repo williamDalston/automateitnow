@@ -5538,16 +5538,6 @@ cultureInfo en-US
 			            },
 			            "Weight": 0.514
 			          }
-			        },
-			        {
-			          "Top 10 Views": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
 			        }
 			      ]
 			    },

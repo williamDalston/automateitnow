@@ -1,229 +1,229 @@
-# ⚡ QUICK START: FLAWLESS GENERATION
+# 🚀 Quick Start: Generate Your First PBIR
 
-**Goal:** Get to flawless generation in 2.5 hours  
-**Approach:** Implement critical path only
-
----
-
-## 🎯 THE 2.5-HOUR PLAN
-
-### Hour 1: Extract Patterns (CRITICAL)
-
-**What:** Extract 3 core visual patterns from working dashboard
-
-**Script:** Create `scripts/generators/extract_3_patterns.py`
-
-**Extract:**
-1. Card (KPI) pattern - from any working KPI
-2. Slicer pattern - from date slicer (`79f5f9f9ae9d08a9c70b`)
-3. Action button pattern - from logo button (`43c3caa20026750d70d1`)
-
-**Output:** `patterns/working_visuals/` with 3 JSON templates
+**Time Estimate:** 30-45 minutes  
+**Prerequisites:** Python 3.8+, Power BI Desktop
 
 ---
 
-### Hour 2: Pre-Generation Validation (CRITICAL)
+## Step 1: Extract Templates (15 min)
 
-**What:** Validate spec and model before generation
+### A. Copy Shell PBIP
 
-**Script:** Create `scripts/validators/pre_generation_validator.py`
+```powershell
+# Navigate to automation-system
+cd C:\Users\farad\OneDrive\Desktop\automation-system
 
-**Validate:**
-1. Spec JSON is valid
-2. All measure names exist in model
-3. All table names exist
-4. All column names exist
-5. Visual types are supported
+# Create pbir_base directory
+New-Item -ItemType Directory -Path "pbir_base" -Force
 
-**Output:** Validation report (pass/fail)
-
----
-
-### 30 Minutes: Post-Generation Testing (CRITICAL)
-
-**What:** Test generated dashboard structure and bindings
-
-**Script:** Create `scripts/validators/post_generation_tester.py`
-
-**Test:**
-1. All visuals have `active: true`
-2. All measures exist
-3. All columns exist
-4. No slicers have `visualContainerObjects` (or minimal)
-5. All cards have `visualContainerObjects`
-
-**Output:** Test report (pass/fail with details)
-
----
-
-## 🚀 IMPLEMENTATION STEPS
-
-### Step 1: Extract Patterns (60 min)
-
-```bash
-cd automation-system
-python scripts/generators/extract_3_patterns.py
+# Copy shell PBIP
+Copy-Item -Path "C:\Users\farad\OneDrive\Desktop\press-room\press-room-dashboard.pbip" -Destination "pbir_base\" -Recurse
 ```
 
-**What it does:**
-- Reads working dashboard visuals
-- Extracts structure for 3 visual types
-- Creates JSON templates with placeholders
-- Saves to `patterns/working_visuals/`
+### B. Create Template Structure
 
-**Output:**
-- `patterns/working_visuals/card_template.json`
-- `patterns/working_visuals/slicer_template.json`
-- `patterns/working_visuals/action_button_template.json`
-
----
-
-### Step 2: Create Pre-Generation Validator (60 min)
-
-```bash
-python scripts/validators/pre_generation_validator.py --spec FINAL_DASHBOARD_SPEC.md
+```powershell
+# Create template directories
+$templateBase = "pbir_base\_templates\visuals"
+New-Item -ItemType Directory -Path "$templateBase\card" -Force
+New-Item -ItemType Directory -Path "$templateBase\table" -Force
+New-Item -ItemType Directory -Path "$templateBase\slicer" -Force
+New-Item -ItemType Directory -Path "$templateBase\hundredPercentStackedColumnChart" -Force
+New-Item -ItemType Directory -Path "$templateBase\donutChart" -Force
+New-Item -ItemType Directory -Path "$templateBase\lineChart" -Force
+New-Item -ItemType Directory -Path "$templateBase\actionButton_logo" -Force
+New-Item -ItemType Directory -Path "$templateBase\actionButton_nav" -Force
 ```
 
-**What it does:**
-- Validates spec JSON structure
-- Checks all measure names against model
-- Checks all table/column names
-- Reports errors before generation starts
+### C. Extract One Visual of Each Type
 
-**Output:**
-- Validation report
-- List of issues (if any)
-- Pass/fail status
+**From shell PBIP, copy one visual.json of each type:**
+
+1. **Card:** Copy from `home/visuals/kpi_total_views/visual.json`
+2. **Table:** Copy from `home/visuals/top10_table/visual.json`
+3. **Slicer:** Copy from `home/visuals/date_slicer/visual.json`
+4. **Stacked Chart:** Copy from `home/visuals/top10_vs_remaining/visual.json`
+5. **Donut:** Copy from `home/visuals/channel_share/visual.json` (if exists)
+6. **Line Chart:** Copy from `channels/visuals/channel_over_time/visual.json` (if exists)
+7. **Logo Button:** Copy from `86b448ef2a89e75fa80e/visuals/43c3caa20026750d70d1/visual.json`
+8. **Nav Button:** Copy from `release_detail/visuals/8b697bb06db35c96cb61/visual.json`
+
+**Save each to:** `pbir_base\_templates\visuals\<visualType>\visual.json`
+
+### D. Insert Placeholders
+
+**For each template, replace field references with placeholders:**
+
+- `"queryRef": "Metrics.Total Views"` → `"queryRef": "__Y_AXIS__"`
+- `"nativeQueryRef": "Total Views"` → `"nativeQueryRef": "__Y_AXIS_NATIVE__"`
+- `"name": "kpi_total_views"` → `"name": "__VISUAL_NAME__"`
+- Title text → `__TITLE__`
+
+**See `PBIR_GENERATOR_APPROACH.md` for complete placeholder list.**
 
 ---
 
-### Step 3: Create Post-Generation Tester (30 min)
+## Step 2: Create Config JSON (5 min)
 
-```bash
-python scripts/validators/post_generation_tester.py --dashboard generated-dashboard.Report
+### A. Extract from Spec
+
+Copy the "AUTOMATION-READY CONFIGURATION" JSON from `FINAL_DASHBOARD_SPEC.md`
+
+### B. Save as dashboard_config.json
+
+```json
+{
+  "shell": {
+    "sourcePbip": "press-room/press-room-dashboard.pbip",
+    "components": ["header", "nav", "footer"],
+    "strategy": "clone_page"
+  },
+  "pages": [
+    {
+      "id": "home",
+      "displayName": "Executive Overview",
+      "kpis": [ ... ],
+      "visuals": [ ... ]
+    }
+  ]
+}
 ```
 
-**What it does:**
-- Tests all visuals for required properties
-- Validates all data bindings
-- Checks for common issues
-- Generates test report
+---
 
-**Output:**
-- Test report
-- List of issues (if any)
-- Pass/fail status
+## Step 3: Run Generator (2 min)
+
+```bash
+python pbir_generate.py \
+  --config dashboard_config.json \
+  --base pbir_base \
+  --out pbir_out
+```
+
+**Expected Output:**
+```
+✅ Generated PBIR into: pbir_out
+🧾 Validation report: pbir_out/validation_report.json
+```
 
 ---
 
-## 📋 MINIMAL GENERATOR UPDATE
+## Step 4: Validate (2 min)
 
-### Update Existing Generator
+```bash
+python master_pbip_validator.py pbir_out --check-only --verbose
+```
 
-**Key Changes:**
-1. **Use Extracted Patterns**
-   ```python
-   # Load pattern
-   pattern = load_pattern("patterns/working_visuals/card_template.json")
-   
-   # Apply pattern
-   visual = apply_pattern(pattern, {
-       "measure": "Total Views",
-       "label": "Total Views"
-   })
-   ```
-
-2. **Add Validation**
-   ```python
-   # Before generation
-   if not validate_spec(spec):
-       raise ValueError("Spec validation failed")
-   
-   # After each visual
-   if not validate_visual(visual):
-       logger.warning(f"Visual {visual_id} has issues")
-   ```
-
-3. **Add Testing**
-   ```python
-   # After generation
-   test_results = test_dashboard(dashboard)
-   if not test_results.passed:
-       logger.error("Dashboard tests failed")
-   ```
+**Fix any errors before proceeding.**
 
 ---
 
-## ✅ SUCCESS CRITERIA
+## Step 5: Test in Power BI Desktop (10 min)
 
-### After 2.5 Hours
+1. **Open PBIR:**
+   - Open Power BI Desktop
+   - File → Open → Browse
+   - Navigate to `pbir_out/press-room-dashboard.pbip`
+   - Click Open
 
-- [x] 3 visual patterns extracted
-- [x] Pre-generation validator working
-- [x] Post-generation tester working
-- [x] Generator uses patterns
-- [x] Validation catches issues
-- [x] Testing catches issues
+2. **Verify:**
+   - ✅ All visuals render
+   - ✅ No error messages
+   - ✅ Images/icons display
+   - ✅ Navigation works
+   - ✅ Measures calculate
 
-### Quality Improvement
-
-**Before:**
-- Manual pattern application
-- Issues found after generation
-- Inconsistent structure
-
-**After:**
-- Pattern-based generation
-- Issues caught before/during generation
-- Consistent structure from working examples
+3. **Test Navigation:**
+   - Click nav buttons
+   - Verify page transitions
+   - Check drillthrough (if configured)
 
 ---
 
-## 🎯 NEXT STEPS (After Quick Start)
+## Step 6: Iterate (As Needed)
 
-Once quick start is complete:
+**If issues found:**
 
-1. **Extract More Patterns** (1 hour)
-   - Chart patterns
-   - Table patterns
-   - More visual types
+1. **Check Validation Report:**
+   - Review `pbir_out/validation_report.json`
+   - Fix template placeholders
+   - Re-run generator
 
-2. **Enhance Validation** (1 hour)
-   - More validation rules
-   - Better error messages
-   - Auto-fix suggestions
+2. **Check Visual Contracts:**
+   - Review `PRECISE_VISUAL_GENERATION_METHOD.md`
+   - Verify queryState structure
+   - Check sortDefinition
 
-3. **Enhance Testing** (1 hour)
-   - More test cases
-   - Visual comparison
-   - Quality metrics
-
-**Total Additional Time:** 3 hours  
-**Total System Time:** 5.5 hours
+3. **Check Common Issues:**
+   - Review `COMMON_PBIP_ISSUES.md`
+   - Apply fixes
+   - Re-validate
 
 ---
 
-## 📝 QUICK REFERENCE
+## 🎯 Success Checklist
 
-### Files to Create
+After generation, verify:
 
-1. `scripts/generators/extract_3_patterns.py`
-2. `scripts/validators/pre_generation_validator.py`
-3. `scripts/validators/post_generation_tester.py`
-
-### Files to Update
-
-1. Existing generator (use patterns)
-2. Generation workflow (add validation/testing)
-
-### Files Created
-
-1. `patterns/working_visuals/card_template.json`
-2. `patterns/working_visuals/slicer_template.json`
-3. `patterns/working_visuals/action_button_template.json`
+- [ ] All pages exist and open
+- [ ] All visuals render (no blank visuals)
+- [ ] KPI cards show values
+- [ ] Charts display data
+- [ ] Slicers work
+- [ ] Navigation buttons work
+- [ ] Images/icons display
+- [ ] No validation errors
+- [ ] Measures calculate correctly
 
 ---
 
-**Status:** Ready to Execute  
-**Time:** 2.5 hours  
-**Impact:** 80% improvement in generation quality
+## 🚨 Troubleshooting
+
+### "Missing template" error
+**Fix:** Ensure all visual types have templates in `pbir_base/_templates/visuals/`
+
+### "Invalid field ref" error
+**Fix:** Check `Table[Field]` format in config JSON matches model
+
+### "JSON parse error" in validator
+**Fix:** Check for JSON comments (`/* */` or `//`) in generated files
+
+### Visuals don't render
+**Fix:** 
+1. Check `datasetReference` in `report.json`
+2. Verify field references match model
+3. Check `queryState` structure matches templates
+
+### Images don't display
+**Fix:**
+1. Verify ResourcePackageItem references match shell PBIP
+2. Check StaticResources folder exists
+3. Ensure image files are in RegisteredResources
+
+---
+
+## 📚 Next Steps
+
+Once generation works:
+
+1. **Generate All Pages:** Update config with all 6 pages
+2. **Add Drillthrough:** Configure drillthrough actions
+3. **Polish UI:** Adjust positions, colors, formatting
+4. **Connect Real Data:** Point to production semantic model
+5. **Deploy:** Publish to Power BI Service
+
+---
+
+## 🎉 You're Ready!
+
+Follow these steps and you'll have a working PBIR in under an hour.
+
+**Questions?** Check:
+- `FINAL_DASHBOARD_SPEC.md` - Complete specification
+- `PRECISE_VISUAL_GENERATION_METHOD.md` - Visual contracts
+- `PBIR_GENERATOR_APPROACH.md` - Generation methodology
+- `ASSET_HANDLING_GUIDE.md` - Asset strategy
+
+---
+
+**Status:** ✅ Ready to generate your first PBIR!

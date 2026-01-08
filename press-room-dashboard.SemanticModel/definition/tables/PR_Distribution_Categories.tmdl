@@ -8,8 +8,8 @@ table PR_Distribution_Categories
 			RETURN
 			SWITCH(
 				SelectedCategory,
-				"Top 10", [Top 10 PR Views],
-				"Other Releases", [Remaining PR Views],
+				"Top 10", [Top 10 Press Release Views],
+				"Other Releases", [Remaining Press Release Views],
 				BLANK()
 			)
 			formatString: #,0

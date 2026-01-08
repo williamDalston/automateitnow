@@ -1,6 +1,6 @@
 # 🎯 FINAL DASHBOARD SPECIFICATION
 
-**Version:** 2.3 LOCKED  
+**Version:** 2.4 LOCKED  
 **Status:** ✅ Production-Ready (Mathematically Locked + Silent Failures Fixed)  
 **Last Updated:** January 8, 2026
 
@@ -31,16 +31,60 @@ This specification is organized into **4 locked blocks**:
 **Model Logic (Production-Grade):**
 ```dax
 Page_Type =
-VAR url = LOWER(Fact_Press_Analytics[Page_URL])
+VAR url0 = LOWER(TRIM(Fact_Press_Analytics[Page_URL]))
+
+-- Guard: Treat empty string as blank (ISBLANK doesn't always catch "" for text)
+VAR urlIsMissing = ISBLANK(url0) || url0 = ""
+
+-- Strip query string + hash fragment properly (cut at first ? or #)
+VAR qPos = FIND("?", url0, 1, 0)
+VAR hPos = FIND("#", url0, 1, 0)
+VAR cutPos =
+    IF(
+        qPos = 0 && hPos = 0, 0,
+        IF(qPos = 0, hPos,
+            IF(hPos = 0, qPos, MIN(qPos, hPos))
+        )
+    )
+VAR urlPath = IF(cutPos > 0, LEFT(url0, cutPos - 1), url0)
+
+-- Normalize trailing slash for comparisons
+VAR urlNoTrail =
+    IF(RIGHT(urlPath, 1) = "/", LEFT(urlPath, LEN(urlPath) - 1), urlPath)
+
+-- Landing page canonical variants (ENDS-WITH style checks)
+-- Guard: Treat /press-room (no trailing slash) as Press Home if it occurs
+VAR isPressHome =
+    urlNoTrail = "/press-room"
+    || RIGHT(urlPath, LEN("/press-room/")) = "/press-room/"
+    || RIGHT(urlNoTrail, LEN("/press-room/index")) = "/press-room/index"
+    || RIGHT(urlNoTrail, LEN("/press-room/index.html")) = "/press-room/index.html"
+
+-- Broad press-room bucket (still overinclusive, but matches your locked warning)
+VAR isPressRoom =
+    CONTAINSSTRING(urlPath, "/press-room/")
+
 RETURN
 SWITCH(
     TRUE(),
-    ISBLANK(url), "Other",
-    CONTAINSSTRING(url, "/press-room/index.html"), "Landing Page",
-    CONTAINSSTRING(url, "/press-room/") && NOT CONTAINSSTRING(url, "/press-room/index.html"), "Press Release",
+    urlIsMissing, "Other",
+    isPressHome, "Landing Page",
+    isPressRoom, "Press Release",
     "Other"
 )
 ```
+
+**🔒 URL CANONICALIZATION RULE (LOCKED):**
+> **Landing page detection must handle canonical variants:**
+> - Strip query string (`?utm=...`) and hash fragments (`#section`) by cutting at first `?` or `#`
+> - Use ENDS-WITH style pattern matching (not `CONTAINSSTRING`) to detect landing page
+> - Treat `/press-room/` as landing page (if true in your site)
+> - Treat `/press-room/index` as landing page (if true in your site)
+> - Treat `/press-room/index.html` as landing page
+> 
+> **Do NOT use `CONTAINSSTRING("/press-room/")` to detect landing page. Landing must be matched via end-of-path patterns.**
+> 
+> **For production-grade implementation:** Use a `Dim_Page` mapping table (canonical URL → Page_Type) instead of string matching.
 
 **Note:** For true production-grade implementation, create a `Dim_Page` mapping table (URL → Page_Type) and join it, so this logic isn't embedded in the fact table.
 
@@ -188,6 +232,58 @@ SWITCH(
 
 # 📊 BLOCK 2: MEASURE CONTRACT
 
+## 2.0 Model Prerequisites (LOCKED)
+
+**Purpose:** Required fields and data types for generator to hard-fail early if missing.
+
+### Fact Table: `Fact_Press_Analytics`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `Views` | Numeric | ✅ | Page view count |
+| `Users` | Numeric | ✅ | Unique user count (may be non-additive) |
+| `Page_URL` | Text | ✅ | Full URL path |
+| `Channel_Group` | Text | ✅ | Channel classification |
+| `Page_Type` | Text | ✅ | Calculated column or dimension join |
+
+### Dimension Table: `Dim_Date`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `Date` | Date | ✅ | Primary date key |
+| `Month_Year` | Text | ✅ | Display label (e.g., "Jan 2024") |
+| `YearMonth` | Numeric | ✅ | Sort key (YYYYMM format) |
+
+### Measures Table: `Metrics`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| All measures defined in 2.1 | Measure | ✅ | See Measure Contract below |
+
+### Helper Tables
+
+| Table | Required | Notes |
+|-------|----------|-------|
+| `Top10_Series` | ✅ | 2-row table with `Series` and `SortOrder` columns |
+
+### Optional Dimension: `Dim_Press_Releases`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `Page_URL` | Text | ⚠️ Optional | Primary key (or use `ReleaseID` if available) |
+| `Page_Title` | Text | ⚠️ Optional | Display name for releases |
+| `Publish_Date` | Date | ⚠️ Optional | Publication date |
+| `Category` | Text | ⚠️ Optional | Release category |
+
+**Fallback Behavior:**
+- If `Dim_Press_Releases` missing, use `Fact_Press_Analytics[Page_URL]` for all release references
+- Top Releases Table shows `Page_URL` instead of `Page_Title` if dimension missing
+- Release Detail metadata table shows URL-only if dimension missing
+
+**Generator Validation:** Generator must validate all prerequisites exist before generating visuals. Hard-fail with clear error message if any required field is missing. Warn (but continue) if optional dimension fields are missing.
+
+---
+
 ## 2.1 Core Measures (Global)
 
 **Purpose:** Canonical list of measures used across all pages. This is the shared language between wireframe and DAX.
@@ -209,6 +305,7 @@ SWITCH(
 | **Landing Page Views** | Total views for press room homepage only | `CALCULATE([Total Views], Fact_Press_Analytics[Page_Type] = "Landing Page")` | `Page_Type = "Landing Page"` |
 | **Landing Page Share %** | Percentage of total views that are landing page views | `[Landing Page Views] / [Total Views]` | None (calculated) |
 | **# Press Releases** | Count of distinct press releases | `CALCULATE(DISTINCTCOUNT(Fact_Press_Analytics[Page_URL]), Fact_Press_Analytics[Page_Type] = "Press Release")` | `Page_Type = "Press Release"` (locked) |
+| | | **⚠️ WARNING:** `DISTINCTCOUNT(Page_URL)` can overcount if URLs have tracking params, localization, or alternate slugs. For production, use a canonical key: `ReleaseURL_Canonical` or `Dim_Press_Releases[ReleaseID]` |
 | **Avg Views per Release** | Average views per press release | `[Press Release Views] / [# Press Releases]` | Calculated |
 | **Top 10 PR Views** | Views from top 10 press releases by views (fixed set across date range) | See DAX below | `Page_Type = "Press Release"` |
 | **Remaining PR Views** | Views from all press releases except top 10 | `[Press Release Views] - [Top 10 PR Views]` | Calculated |
@@ -303,28 +400,27 @@ CALCULATE(
 // Top 10 PR Views (top 10 calculation - fixed set across date range)
 // Top 10 is determined across the selected date range, then shown over time
 // Production-safe version using SELECTCOLUMNS + TREATAS
+// CRITICAL: REMOVEFILTERS on chart axis time grain (Month_Year) to prevent "Top 10 per month" bug
 Top 10 PR Views =
-VAR prTableAllDates =
-    SUMMARIZE(
-        FILTER(
-            ALLSELECTED(Fact_Press_Analytics),
-            Fact_Press_Analytics[Page_Type] = "Press Release"
+VAR Top10Base =
+    CALCULATETABLE(
+        SUMMARIZE(
+            Fact_Press_Analytics,
+            Fact_Press_Analytics[Page_URL],
+            "__Views", SUM(Fact_Press_Analytics[Views])
         ),
-        Fact_Press_Analytics[Page_URL],
-        "__Views", SUM(Fact_Press_Analytics[Views])
+        Fact_Press_Analytics[Page_Type] = "Press Release",
+        REMOVEFILTERS(Dim_Date[Month_Year])  -- Ignores chart's month grouping, retains date slicer
     )
-VAR top10 =
-    TOPN(10, prTableAllDates, [__Views], DESC)
-VAR top10Urls =
-    SELECTCOLUMNS(
-        top10,
-        "Page_URL", Fact_Press_Analytics[Page_URL]
-    )
+VAR Top10 =
+    TOPN(10, Top10Base, [__Views], DESC)
+VAR Top10Urls =
+    SELECTCOLUMNS(Top10, "Page_URL", Fact_Press_Analytics[Page_URL])
 RETURN
     CALCULATE(
         SUM(Fact_Press_Analytics[Views]),
         Fact_Press_Analytics[Page_Type] = "Press Release",
-        TREATAS(top10Urls, Fact_Press_Analytics[Page_URL])
+        TREATAS(Top10Urls, Fact_Press_Analytics[Page_URL])
     )
 
 // Remaining PR Views (remainder)
@@ -344,6 +440,39 @@ SWITCH(
     BLANK()
 )
 ```
+
+**🔒 TOP-N RANKING RULE (LOCKED):**
+> **Top-N ranking table must remove filters from the chart axis time grain (ex: `Month_Year`) while retaining date slicer selection.** This ensures the Top 10 set is fixed across the selected date range, not recalculated per month.
+
+### Top 10 Table Filter Measure
+
+```dax
+// Is Top 10 Release (filter measure for Top Releases Table)
+Is Top 10 Release =
+VAR url = SELECTEDVALUE(Fact_Press_Analytics[Page_URL])
+VAR Top10Base =
+    CALCULATETABLE(
+        SUMMARIZE(
+            Fact_Press_Analytics,
+            Fact_Press_Analytics[Page_URL],
+            "__Views", SUM(Fact_Press_Analytics[Views])
+        ),
+        Fact_Press_Analytics[Page_Type] = "Press Release",
+        REMOVEFILTERS(Dim_Date[Month_Year]),
+        REMOVEFILTERS(Dim_Date[YearMonth])
+    )
+VAR Top10 =
+    TOPN(10, Top10Base, [__Views], DESC)
+VAR Top10Urls =
+    SELECTCOLUMNS(Top10, "Page_URL", Fact_Press_Analytics[Page_URL])
+RETURN
+IF(NOT ISBLANK(url) && CONTAINS(Top10Urls, [Page_URL], url), 1, 0)
+```
+
+**🔒 TOP RELEASES TABLE RULE (LOCKED):**
+> **Visual-level filter:** `Metrics[Is Top 10 Release] = 1`  
+> **Sort:** `Metrics[Press Release Views]` descending  
+> This ensures the table shows exactly the same Top 10 set as the stacked chart.
 
 ### Helper Table
 
@@ -386,6 +515,18 @@ DATATABLE(
 - **Title:** "Top 10 vs Remaining Share (Over Time)"
 - **Field Wells:** See Build Recipes (4.1)
 
+#### Visual 2: Top Releases Table (Top 10)
+- **Type:** Table
+- **Purpose:** Enable drillthrough to Release Detail page
+- **Columns:**
+  - `Page_Title` (visible) - **Fallback:** `Page_URL` if `Dim_Press_Releases` missing
+  - `Metrics[Press Release Views]` (visible, sorted descending)
+  - `Page_URL` (hidden, used for drillthrough)
+- **Rows:** Top 10 press releases by views (matches Top 10 definition)
+- **Visual-Level Filter:** `Metrics[Is Top 10 Release] = 1` (locked)
+- **Sort:** `Metrics[Press Release Views]` descending (locked)
+- **Drillthrough:** Enabled on table rows → Release Detail page
+
 ### Filters
 
 - **Global Date Filter:** Last 90 days (default)
@@ -393,7 +534,9 @@ DATATABLE(
 
 ### Drillthrough
 
-- **From:** KPI cards, chart
+- **From:** Visuals that include `Page_URL` in context (table/bar of releases, Top Releases list, etc.)
+  - **⚠️ CRITICAL:** KPI cards and the "Top 10 vs Remaining" chart do **not** carry `Page_URL` context and cannot trigger drillthrough
+  - **Required Visual:** Top Releases Table (Top 10) with `Page_URL` (hidden), `Page_Title`, `Metrics[Press Release Views]`
 - **To:** Release Detail page
 - **Field:** `Fact_Press_Analytics[Page_URL]`
 
@@ -414,7 +557,7 @@ DATATABLE(
 
 - **Search-Enabled Table:** Press releases with search/filter capabilities
 - **Slicers:** Date range, Category (if available)
-- **Charts:** Press release performance charts (to be specified in future iteration)
+- **Charts:** No charts in v2.4 (locked scope)
 
 ### Filters
 
@@ -505,6 +648,7 @@ Deep-dive page for individual press releases, accessed via drillthrough from oth
 - **X-axis:** `Dim_Date[Date]`
 - **Y-axis:** `Metrics[Total Views]`
 - **Filter:** This release only
+- **Date Override:** Visual-level relative date filter = Last 30 days (overrides global "Last 90 days" for this chart only)
 
 #### Referrers/Channels Chart
 - **Type:** Bar or donut chart
@@ -525,7 +669,8 @@ Deep-dive page for individual press releases, accessed via drillthrough from oth
 - **Drillthrough Field (Preferred):** `Dim_Press_Releases[Page_URL]` or `Dim_Press_Releases[ReleaseID]` (if dimension exists)
 - **Drillthrough Field (Fallback):** `Fact_Press_Analytics[Page_URL]` (if dimension not available)
 - **Source Pages:** Executive Overview, Press Releases
-- **Trigger:** Click on KPI card, chart data point, or table row
+- **Trigger:** Table row or data point **only from visuals that include `Page_URL` in context** (e.g., Top Releases table, Releases table)
+  - **⚠️ CRITICAL:** KPI cards and charts without `Page_URL` context cannot trigger drillthrough
 - **Filter Applied:** `Fact_Press_Analytics[Page_URL] = [Selected Value]` (or dimension equivalent)
 
 ---
@@ -569,6 +714,62 @@ Reference page with metric definitions and glossary.
 
 **⚠️ JSON Filter String Format:**
 > **Filter values in JSON must be quote-safe.** Use escaped quotes: `"Page_Type = \"Press Release\""` (not `"Page_Type = Press Release"`). This prevents "it compiles but doesn't filter" issues in automation.
+
+### Filter DSL Contract (Automation Config → PBIR Filter Object)
+
+**Purpose:** Translate internal DSL filter strings to Power BI PBIR filter objects.
+
+**DSL Format (Internal Config):**
+- `Page_Type = "Press Release"` → Categorical In filter
+- `Page_Type IN {"Press Release", "Landing Page"}` → Categorical In filter with multiple values
+
+**PBIR Filter Object Structure:**
+```json
+{
+  "filters": [
+    {
+      "name": "Fact_Press_Analytics[Page_Type]",
+      "type": "Categorical",
+      "filter": {
+        "And": [
+          {
+            "Left": {
+              "Expression": {
+                "SourceRef": {
+                  "Entity": "Fact_Press_Analytics"
+                },
+                "Property": "Page_Type"
+              }
+            },
+            "ComparisonKind": 0,
+            "Right": {
+              "Literal": {
+                "Value": "Press Release"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Generator Rule:**
+- Config field refs use `Table[Column]` and `Metrics[Measure]`
+- Generator converts to PBIR `queryRef`/`nativeQueryRef` per Visual Contract library
+- All filters must compile to PBIR `filter` objects (not string literals)
+
+**Recommended Structured Config Format:**
+```json
+"pageLevel": [
+  { 
+    "field": "Fact_Press_Analytics[Page_Type]", 
+    "op": "IN", 
+    "values": ["Press Release"] 
+  }
+]
+```
 
 ---
 
@@ -645,7 +846,6 @@ This section provides high-level field well configurations. The precise method d
 | **Legend** | `Fact_Press_Analytics[Channel_Group]` | Column | Channel categories |
 | **Values** | `Metrics[Total Views]` | Measure | Primary metric |
 | **Tooltips** | `Metrics[Total Users]` | Measure | Additional context |
-| | `Metrics[Engagement Rate]` | Measure | If available |
 
 ### Configuration
 
@@ -656,10 +856,9 @@ This section provides high-level field well configurations. The precise method d
   "bindings": {
     "legend": "Fact_Press_Analytics[Channel_Group]",
     "values": "Metrics[Total Views]",
-    "tooltips": [
-      "Metrics[Total Users]",
-      "Metrics[Engagement Rate]"
-    ]
+      "tooltips": [
+        "Metrics[Total Users]"
+      ]
   }
 }
 ```
@@ -765,7 +964,8 @@ This section provides high-level field well configurations. The precise method d
 
 ### Generation Notes
 
-- **Projection:** Single measure in `Data` bucket (not `Values`)
+- **Projection:** Single measure in bucket role name observed in baseline exported PBIR specimen for `card` visual type
+  - **⚠️ NOTE:** Bucket role names differ by visual type/version. Do not assume "Data" vs "Values" without verifying against exported `visual.json` sample.
 - **Field Type:** MUST be `Measure` (never `Column`)
 - **Visual Container Objects:** Required (background, border, visualHeader)
 - **Position:** Standard KPI card size: 184px × 88px
@@ -838,6 +1038,54 @@ This section provides high-level field well configurations. The precise method d
 - **Slicer with search enabled** on `Page_Title` or `Page_URL`
 - **Text filter** on table columns
 - **Custom visual** (if available)
+
+---
+
+## 4.8 Top Releases Table (Top 10)
+
+### Visual Type
+**Table**
+
+### Field Well Recipe
+
+| Well | Field | Type | Notes |
+|------|-------|------|-------|
+| **Columns** | `Page_Title` (or `Page_URL` if `Dim_Press_Releases` missing) | Column | Visible, display name |
+| | `Metrics[Press Release Views]` | Measure | Visible, sorted descending |
+| | `Page_URL` | Column | Hidden, used for drillthrough |
+
+### Configuration
+
+```json
+{
+  "visualType": "table",
+  "title": "Top 10 Press Releases",
+  "bindings": {
+    "columns": [
+      { "field": "Page_Title", "visible": true },
+      { "field": "Metrics[Press Release Views]", "visible": true, "sort": "desc" },
+      { "field": "Page_URL", "visible": false }
+    ]
+  },
+  "filter": {
+    "measure": "Metrics[Is Top 10 Release]",
+    "value": 1
+  },
+  "drillthrough": {
+    "enabled": true,
+    "targetPage": "release_detail",
+    "field": "Page_URL"
+  }
+}
+```
+
+### Generation Notes
+
+- **Visual-Level Filter:** `Metrics[Is Top 10 Release] = 1` (locked)
+- **Sort:** `Metrics[Press Release Views]` descending (locked)
+- **Fallback:** If `Dim_Press_Releases[Page_Title]` missing, use `Fact_Press_Analytics[Page_URL]` as display column
+- **Drillthrough:** Enabled on table rows → Release Detail page
+- **See:** Section 2.2 for `Is Top 10 Release` measure definition
 
 ---
 
@@ -961,6 +1209,19 @@ This section provides high-level field well configurations. The precise method d
           "type": "hundredPercentStackedColumnChart",
           "title": "Top 10 vs Remaining Share (Over Time)",
           "recipe": "4.1"
+        },
+        {
+          "id": "top_releases_table",
+          "type": "table",
+          "title": "Top 10 Press Releases",
+          "recipe": "4.8",
+          "columns": [
+            { "field": "Page_Title", "visible": true, "fallback": "Page_URL" },
+            { "field": "Metrics[Press Release Views]", "visible": true, "sort": "desc" },
+            { "field": "Page_URL", "visible": false }
+          ],
+          "filter": "Metrics[Is Top 10 Release] = 1",
+          "drillthrough": { "enabled": true, "targetPage": "release_detail" }
         }
       ]
     },
@@ -1011,6 +1272,51 @@ This section provides high-level field well configurations. The precise method d
 
 ---
 
+# 📎 APPENDIX: PBIR GENERATOR GUARDRAILS
+
+**Purpose:** Hard contracts that prevent silent failures and schema violations during PBIR generation.
+
+## A.1 Visual Identity Contracts
+
+- **Visual folder name == visual.json.name:** Must be identical (enforced by validator)
+- **Required directory structure:** `pages/<pageId>/visuals/<visualId>/visual.json`
+- **Required files:** `pages.json`, `report.json`, `definition.pbir` must exist
+
+## A.2 Binding Integrity Rules
+
+- **Every projected field has valid queryRef:** Format `"Table.Field"` matching model exactly
+- **queryRef table/field names match model exactly:** Case-sensitive validation
+- **Measures not wrapped in aggregations:** Use explicit measure names, not `SUM(Table[Column])`
+
+## A.3 Sorting Rule (Critical)
+
+- **If sortDefinition references a field, that field must appear in projections:** Prevents "sort silently ignored" bug
+- **Sort field must be Column (not Measure):** For time-based sorting (e.g., `YearMonth`)
+
+## A.4 No Hallucinated Properties
+
+- **Only emit properties observed in known-good samples OR Microsoft schema:**
+  - Do not include: `drillFilterOtherVisuals`, `altText` (in visualContainerObjects), `description`/`fromCardinality`/`toCardinality` (in relationships.tmdl)
+  - Verify against exported PBIP samples before adding new properties
+
+## A.5 Filter DSL Contract
+
+- **Config field refs use `Table[Column]` and `Metrics[Measure]`:** Internal DSL format
+- **Generator converts to PBIR queryRef/nativeQueryRef:** Per Visual Contract library
+- **All filters must compile to PBIR filter objects:** Not string literals
+
+## A.6 Top-N Ranking Rule
+
+- **Top-N ranking table must remove filters from chart axis time grain:** Use `REMOVEFILTERS(Dim_Date[Month_Year])` to prevent "Top 10 per month" bug
+- **Retain date slicer selection:** Only remove axis grain, not global date filter
+
+## A.7 JSON Syntax Rules
+
+- **No comments in JSON:** `/* */` and `//` cause hard failures
+- **UTF-8 encoding, no BOM:** Power BI chokes on BOM
+
+---
+
 # 📝 CHANGE LOG
 
 | Date | Change | Rationale |
@@ -1045,6 +1351,24 @@ This section provides high-level field well configurations. The precise method d
 | 2026-01-08 | Fixed Top 10 DAX (SELECTCOLUMNS + TREATAS) | Prevent "blank chart" silent failure |
 | 2026-01-08 | Locked Channel dimension to Fact table everywhere | Prevent field binding mismatches |
 | 2026-01-08 | Fixed filter string quoting in JSON | Prevent "compiles but doesn't filter" issues |
+| 2026-01-08 | Fixed drillthrough contract (removed KPI cards/chart, added Top Releases Table) | Prevent silent drillthrough failures |
+| 2026-01-08 | Fixed Top 10 DAX (added REMOVEFILTERS for Month_Year) | Prevent "Top 10 per month" bug |
+| 2026-01-08 | Removed "Engagement Rate" from tooltips | Eliminate TBD references |
+| 2026-01-08 | Added Filter DSL Contract section | Formal translation from config to PBIR filters |
+| 2026-01-08 | Added URL canonicalization guidance | Handle `/press-room/`, query strings, hash fragments |
+| 2026-01-08 | Added canonical key warning for # Press Releases | Prevent overcounting from URL variants |
+| 2026-01-08 | Fixed card bucket naming to be sample-driven | Prevent PBIR version-specific failures |
+| 2026-01-08 | Fixed Release Detail date filter conflict (30 vs 90 days) | Clarify visual-level override mechanism |
+| 2026-01-08 | Added Model Prerequisites section | Enable generator early validation |
+| 2026-01-08 | Added FieldRef grammar clarification | Document DSL → PBIR conversion |
+| 2026-01-08 | Added Appendix: PBIR Generator Guardrails | Centralized hard contracts reference |
+| 2026-01-08 | Fixed Page_Type DAX (proper query string stripping, ENDS-WITH pattern matching) | Prevent landing page matching all press-room URLs |
+| 2026-01-08 | Removed Engagement Rate from Build Recipe 4.2 tooltips | Eliminate remaining TBD references |
+| 2026-01-08 | Fixed drillthrough trigger in Release Detail section | Consistent with Page 1 correction |
+| 2026-01-08 | Added Is Top 10 Release measure and locked table filter rule | Ensure Top Releases Table matches chart Top 10 set |
+| 2026-01-08 | Locked Page 2 charts scope (no charts in v2.4) | Remove "to be specified" ambiguity |
+| 2026-01-08 | Added Dim_Press_Releases to Model Prerequisites (optional) | Document fallback behavior |
+| 2026-01-08 | Added Top Releases Table to automation JSON and Build Recipes | Complete automation-ready config |
 
 ---
 

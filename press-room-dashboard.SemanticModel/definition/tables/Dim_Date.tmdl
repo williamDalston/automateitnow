@@ -87,24 +87,12 @@ table Dim_Date
 
 		annotation SummarizationSetBy = Automatic
 
-	/// Year-Month formatted as text (e.g., '2025-03'). Useful for sorting and labeling. Sorted by YearMonth for chronological ordering.
+	/// Year-Month formatted as text (e.g., '2025-03'). Useful for sorting and labeling.
 	column Year_Month
 		dataType: string
 		lineageTag: pr-dimdate-yearmonth
 		summarizeBy: none
 		sourceColumn: Year_Month
-		sortByColumn: YearMonth
-
-		annotation SummarizationSetBy = Automatic
-
-	/// Numeric sort key for Year_Month column (YYYYMM format). Used to ensure chronological sorting instead of alphabetical.
-	column YearMonth
-		dataType: int64
-		formatString: 0
-		isHidden
-		lineageTag: pr-dimdate-yearmonth-sort
-		summarizeBy: sum
-		expression = YEAR(Dim_Date[Date]) * 100 + MONTH(Dim_Date[Date])
 
 		annotation SummarizationSetBy = Automatic
 
@@ -163,8 +151,7 @@ table Dim_Date
 				    AddWeekOfYear = Table.AddColumn(AddDayOfWeek, "Week_Of_Year", each Date.WeekOfYear([Date]), Int64.Type),
 				    AddQuarter = Table.AddColumn(AddWeekOfYear, "Quarter", each Date.QuarterOfYear([Date]), Int64.Type),
 				    AddYearMonth = Table.AddColumn(AddQuarter, "Year_Month", each Text.From([Year]) & "-" & Text.PadStart(Text.From([Month]), 2, "0"), type text),
-				    AddYearMonthKey = Table.AddColumn(AddYearMonth, "YearMonth", each [Year] * 100 + [Month], Int64.Type),
-				    AddIsYTD = Table.AddColumn(AddYearMonthKey, "Is_YTD", each [Year] = Date.Year(DateTime.LocalNow()), type logical)
+				    AddIsYTD = Table.AddColumn(AddYearMonth, "Is_YTD", each [Year] = Date.Year(DateTime.LocalNow()), type logical)
 				in
 				    AddIsYTD
 

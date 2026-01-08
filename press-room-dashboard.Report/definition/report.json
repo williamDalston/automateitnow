@@ -11,7 +11,7 @@
       "type": "SharedResources"
     },
     "customTheme": {
-      "name": "HHS_USWDS_Theme5040178124888481.json",
+      "name": "HHS_USWDS_Theme24282437265841517.json",
       "reportVersionAtImport": {
         "visual": "2.4.0",
         "report": "3.0.0",
@@ -40,7 +40,7 @@
           "expanded": {
             "expr": {
               "Literal": {
-                "Value": "true"
+                "Value": "false"
               }
             }
           }
@@ -78,8 +78,8 @@
           "type": "Image"
         },
         {
-          "name": "HHS_USWDS_Theme5040178124888481.json",
-          "path": "HHS_USWDS_Theme5040178124888481.json",
+          "name": "HHS_USWDS_Theme24282437265841517.json",
+          "path": "HHS_USWDS_Theme24282437265841517.json",
           "type": "CustomTheme"
         }
       ]
