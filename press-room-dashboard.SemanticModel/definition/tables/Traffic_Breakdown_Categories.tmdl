@@ -9,8 +9,8 @@ table Traffic_Breakdown_Categories
 			SWITCH(
 				SelectedCategory,
 				"Landing Page", [Landing Page Views],
-				"Top 10 Releases", [Top 10 Press Release Views],
-				"Other Releases", [Remaining Press Release Views],
+				"Top 10 Releases", [Top 10 PR Views],
+				"Other Releases", [Remaining PR Views],
 				BLANK()
 			)
 			formatString: #,0

@@ -431,45 +431,37 @@ table Metrics
 		displayFolder: 08 - Data Quality
 		lineageTag: pr-m-daterangelabel
 
+	/// DEPRECATED: Use 'Top 10 PR Views' instead. This old measure is kept for backward compatibility but should not be used in new visuals.
 	/// Total views for the top 10 press releases by views.
-	measure 'Top 10 Press Release Views' =
-			VAR Top10Pages =
-			    TOPN(
-			        10,
-			        SUMMARIZE(
-			            FILTER(
-			                Fact_Press_Analytics,
-			                Fact_Press_Analytics[Page_Type] = "Press Release"
-			            ),
-			            Fact_Press_Analytics[Page_URL],
-			            "TotalViews", SUM(Fact_Press_Analytics[Views])
-			        ),
-			        [TotalViews],
-			        DESC
-			    )
-			RETURN
-			SUMX(Top10Pages, [TotalViews])
+	measure 'Top 10 Press Release Views' = [Top 10 PR Views]
 		formatString: #,0
 		displayFolder: 03 - Distribution
 		lineageTag: pr-m-top10releaseviews
+		isHidden: true
 
+	/// DEPRECATED: Use 'Top 10 Share' instead. This old measure is kept for backward compatibility but should not be used in new visuals.
 	/// Percentage of press release traffic from top 10 releases.
-	measure 'Top 10 % of Press Release Traffic' = DIVIDE([Top 10 Press Release Views], [Press Release Views], 0)
+	measure 'Top 10 % of Press Release Traffic' = [Top 10 Share]
 		formatString: 0.0%
 		displayFolder: 03 - Distribution
 		lineageTag: pr-m-top10pct
+		isHidden: true
 
+	/// DEPRECATED: Use 'Remaining PR Views' instead. This old measure is kept for backward compatibility but should not be used in new visuals.
 	/// Total views for press releases not in the top 10.
-	measure 'Remaining Press Release Views' = [Press Release Views] - [Top 10 Press Release Views]
+	measure 'Remaining Press Release Views' = [Remaining PR Views]
 		formatString: #,0
 		displayFolder: 03 - Distribution
 		lineageTag: pr-m-remainingreleaseviews
+		isHidden: true
 
+	/// DEPRECATED: This measure is kept for backward compatibility but should not be used in new visuals.
 	/// Percentage of press release traffic from releases outside top 10.
-	measure 'Remaining Press Release %' = DIVIDE([Remaining Press Release Views], [Press Release Views], 0)
+	measure 'Remaining Press Release %' = DIVIDE([Remaining PR Views], [Press Release Views], 0)
 		formatString: 0.0%
 		displayFolder: 03 - Distribution
 		lineageTag: pr-m-remainingpct
+		isHidden: true
 
 	/// Organic search views for press release pages only.
 	measure 'Organic Search Views (Press Releases Only)' =
@@ -1006,9 +998,9 @@ table Metrics
 
 	/// Second bullet for Executive Summary: Top 10 vs Remaining distribution statement
 	measure 'Executive Summary Line 2' = ```
-			VAR Top10 = [Top 10 Press Release Views]
-			VAR Top10Pct = [Top 10 % of Press Release Traffic]
-			VAR Remaining = [Remaining Press Release Views]
+			VAR Top10 = [Top 10 PR Views]
+			VAR Top10Pct = [Top 10 Share]
+			VAR Remaining = [Remaining PR Views]
 			VAR RemainingPct = 1 - Top10Pct
 			VAR RemainingCount = [# Press Releases] - 10
 			RETURN
@@ -1076,68 +1068,29 @@ table Metrics
 
 	/// Returns the top traffic channel for a specific press release. Used in release detail views and tables.
 	measure 'Top Channel (PR)' = ```
-			
-			/// Value for Top 10 vs Remaining chart. Returns views for selected series (Top 10 or Remaining).
-			measure 'Top10 Series Value' =
-					VAR SelectedSeries = SELECTEDVALUE(Top10_Series[Series])
-					RETURN
-					IF(
-						SelectedSeries = "Top 10",
-						[Top 10 Press Release Views],
-						[Remaining Press Release Views]
-					)
-				formatString: #,0
-				displayFolder: 03 - Distribution
-				lineageTag: pr-m-top10seriesvalue
-			
-			/// Year-to-date press release views. Filters to Press Release page type and calculates YTD total.
-			measure 'Press Release Views YTD' =
-			
-			/// Total unique users for press releases only (excludes landing page and other pages).
-			measure 'Press Release Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Page_Type] = "Press Release")
-				formatString: #,0
-				displayFolder: 01 - Core KPIs
-				lineageTag: pr-m-prusers
-			
-			/// Year-to-date press release users. Filters to Press Release page type and calculates YTD total.
-			measure 'Press Release Users YTD' =
-					CALCULATE(
-						[Press Release Users],
-						DATESYTD(Dim_Date[Date])
-					)
-				formatString: #,0
-				displayFolder: 05 - Time Intelligence
-				lineageTag: pr-m-prusersytd
-					CALCULATE(
-						[Press Release Views],
-						DATESYTD(Dim_Date[Date])
-					)
-				formatString: #,0
-				displayFolder: 05 - Time Intelligence
-				lineageTag: pr-m-prviewsytd
-					VAR CurrentURL = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
-					VAR ChannelTable = 
-					    ADDCOLUMNS(
-					        VALUES(Fact_Press_Analytics[Channel_Group]),
-					        "@ChannelViews",
-					        CALCULATE(
-					            [Total Views],
-					            Fact_Press_Analytics[Page_URL] = CurrentURL
-					        )
-					    )
-					VAR TopChannel = 
-					    TOPN(
-					        1,
-					        FILTER(ChannelTable, [@ChannelViews] > 0),
-					        [@ChannelViews],
-					        DESC
-					    )
-					RETURN
-					IF(
-					    HASONEVALUE(Dim_Press_Releases[Page_URL]),
-					    MAXX(TopChannel, Fact_Press_Analytics[Channel_Group]),
-					    BLANK()
-					)
+			VAR CurrentURL = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
+			VAR ChannelTable = 
+			    ADDCOLUMNS(
+			        VALUES(Fact_Press_Analytics[Channel_Group]),
+			        "@ChannelViews",
+			        CALCULATE(
+			            [Total Views],
+			            Fact_Press_Analytics[Page_URL] = CurrentURL
+			        )
+			    )
+			VAR TopChannel = 
+			    TOPN(
+			        1,
+			        FILTER(ChannelTable, [@ChannelViews] > 0),
+			        [@ChannelViews],
+			        DESC
+			    )
+			RETURN
+			IF(
+			    HASONEVALUE(Dim_Press_Releases[Page_URL]),
+			    MAXX(TopChannel, Fact_Press_Analytics[Channel_Group]),
+			    BLANK()
+			)
 			```
 		displayFolder: 04 - Channels
 		lineageTag: 09d46754-4b2c-4b14-ae53-8a23483f838f

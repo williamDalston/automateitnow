@@ -123,19 +123,7 @@ table 'Channel Selector'
 		formatString: 0
 		lineageTag: b61954e8-5d15-41bb-a28b-38cb18638034
 
-	measure 'Top 10 Views' = ```
-			
-			VAR Top10 =
-			    TOPN(
-			        10,
-			        PressRelease_Summary,
-			        PressRelease_Summary[Total Views],
-			        DESC
-			    )
-			RETURN
-			SUMX(Top10, PressRelease_Summary[Total Views])
-			
-			```
+	measure 'Top 10 Views' = [Top 10 PR Views]
 		formatString: 0
 		lineageTag: 8d179129-a1a7-43d3-8312-cce6f4176ff8
 

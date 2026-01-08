@@ -2,7 +2,7 @@
 
 **Purpose:** Collect all information needed to perfect the visual generation system  
 **Status:** Information Gathering  
-**Version:** 2.2 (All Redlines Fixed + Missing Sections Added)
+**Version:** 2.3 (Final Polish - All Contradictions Fixed + Architecture Notes Merged)
 
 **Key Improvements (v2.0):**
 - 🚨 PBIP Dataset Artifact elevated to BLOCKER status
@@ -30,6 +30,15 @@
 - 📝 Wording: "Expected" → "Observed in golden sample"
 - 📝 Wording: ✅ → "Observed from current files" vs "Confirmed"
 
+**Architecture Notes Merged (v2.3 Addendum):**
+- 🏗️ PBIP pointer file behavior (environment-dependent dataset artifact)
+- 🔗 definition.pbir connectivity keystone (byPath vs byConnection modes)
+- 📁 PBIR modular folder map (definition/report.json, definition/version.json)
+- 📐 Visual container anatomy (z-order vs tabOrder separation)
+- 🔀 Sorting gotcha (silent sort bugs - field must be in query context)
+- 🏷️ visualType taxonomy (reference-only candidate list)
+- 📄 page.json search plan (explicit investigation protocol)
+
 ---
 
 ## 🎯 GOAL
@@ -46,8 +55,8 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
 - ⚠️ `.pbip` file only contains `report` artifact
 - Missing: `dataset` artifact
 
-**Required fix:**
-- `.pbip` MUST include both `report` and `dataset` paths correctly
+**Candidate fix (must be confirmed from golden sample):**
+- If Power BI requires it in your build, `.pbip` must include both `report` and `dataset` artifacts in the exact schema Power BI writes.
 
 **⚠️ CRITICAL: Do not assume schema structure**
 
@@ -68,6 +77,17 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
 - `.pbip` uses `artifacts` array with `report` only ✅ (Observed from current files)
 - `definition.pbir` has `datasetReference` pointing to semantic model ✅ (Observed from current files)
 - ⚠️ **Unknown:** Whether `.pbip` should also have `dataset` artifact (BLOCKER - needs confirmation)
+
+**PBIP Pointer File Behavior (Architecture Note):**
+- **Likely:** The `.pbip` file is intended as a pointer/manifest, listing artifacts (report and optionally semantic model). Many examples show both a report artifact and a model artifact.
+- **Observed (current files):** `.pbip` has an artifacts array with report only, and dataset linkage is in `definition.pbir.datasetReference`.
+- **Action:** Treat "dataset artifact in `.pbip`" as environment-dependent:
+  - Confirm by creating a brand new minimal PBIP in your Desktop build:
+    - Save once with an embedded model
+    - Save once as a thin report (live connection)
+    - Compare the `.pbip` contents across both.
+- **Doc change:** Keep dataset artifact section as BLOCKER, but add:
+  - "Some environments appear to load the dataset exclusively via `definition.pbir.datasetReference`, but this must be proven on this machine/build using a fresh minimal PBIP."
 
 **Generator rule:**
 - ❌ **FORBIDDEN:** Assume or invent `.pbip` schema structure
@@ -99,7 +119,17 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
 **Current observation from your files:**
 - Using TMDL format (`.tmdl` files in `SemanticModel/definition/`)
 - Semantic model version: `4.2` (from `definition.pbism`)
-- Report schema: `2.4.0` (from visual.json `$schema`)
+- Visual schema: `2.4.0` (from visual.json `$schema`)
+- Report schema: `4.0` (from `definition.pbir`)
+
+**definition.pbir Connectivity Keystone (Architecture Note):**
+- **Likely:** `definition.pbir.datasetReference` supports at least two binding modes:
+  - `byPath`: local semantic model folder relative path
+  - `byConnection`: remote dataset connection string / IDs (thin report)
+- **Observed (current files):** `definition.pbir` contains `datasetReference` pointing to the semantic model.
+- **Action - Generator Rules:**
+  - Generator must support both `byPath` and `byConnection`, but only emit the one observed in the golden package you choose as baseline.
+  - If you plan CI/CD repointing later, treat connection swapping as a separate transformation step, not part of visual generation.
 
 **Visual folder structure:**
 - [ ] Visuals live under: `report/definition/pages/{page_id}/visuals/{visual_id}/visual.json` ✅
@@ -123,6 +153,9 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
   - [ ] Points
   - [ ] Power BI internal layout units
   - [ ] Unknown
+
+**Architecture Note:**
+- **Likely:** Many PBIR examples use integers that behave like pixels, but units must still be treated as unknown until confirmed.
 
 **Please provide one visual position example from a golden `visual.json`:**
 - [ ] `position.x`: `___________________________`
@@ -255,8 +288,16 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 - [ ] 100% stacked column: `___________________________`
 - [ ] Slicer: `slicer` ✅ (Observed from current files)
 
+**visualType Taxonomy - Reference Only (Architecture Note):**
+- **Likely:** Native `visualType` strings often look like `lineChart`, `donutChart`, `columnChart`, `clusteredBarChart`, `card`, `tableEx`, `pivotTable`, `basicShape`, `textbox`, `image`, `slicer`.
+- **Observed (current files):** `slicer` is confirmed.
+- **Action:** Put this into the doc as:
+  - "Candidate visualType names (DO NOT USE unless observed in goldens)."
+- **Generator Rule:** That way you get the IDE autocomplete benefits without breaking your "only what Power BI wrote on my machine" contract.
+
 **Generator rule:**
 - ✅ REQUIRED: Only use visualType strings observed in golden samples
+- ✅ REQUIRED: Match **case** exactly (`slicer` vs `Slicer` is fatal)
 - ❌ FORBIDDEN: Invent or "guess" a visualType name
 
 ---
@@ -416,7 +457,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 #### Measures (with spaces in name)
 - [ ] **From KPI card golden sample:** Exact `queryRef` for `Metrics[Total Views]`
   - Observed in golden sample: `___________________________`
-  - Alternative formats to check: `"Metrics[Total Views]"` (bracket notation), `"Total Views"` (no table prefix)
+  - Alternative formats to check: `"Metrics.Total Views"` (dot notation, matches observed pattern), `"Metrics[Total Views]"` (bracket notation), `"Metrics.[Total Views]"`, `"Total Views"` (no table prefix)
 - [ ] **From KPI card golden sample:** Exact `nativeQueryRef` for `Metrics[Total Views]`
   - Observed in golden sample: `___________________________`
   - Alternative formats to check: `"TotalViews"` (no space), other formats
@@ -482,6 +523,14 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 1. Generator MUST set model property: `Dim_Date[Year_Month] SortByColumn = [numeric_sort_key]` (if sort key exists)
 2. Visual MUST include a sortDefinition - **reference format to be confirmed from golden samples** (usually references display column `Year_Month`, not sort key directly)
 
+**Sorting Gotcha - Silent Sort Bugs (Architecture Note):**
+- **Likely:** If `sortDefinition` references a field, that field often must exist in the visual's query context. If it's not displayed, it may still need to appear somewhere in the query (sometimes via hidden projections/tooltips, depending on schema).
+- **Observed (current files):** Slicer has a `sortDefinition` present.
+- **Action - Conditional Rule (golden-dependent):**
+  - If golden visuals show sort-by fields that are not in visible projections, encode that as a pattern for that visual type.
+  - If goldens do not do this, do not invent it.
+- **Generator Rule:** This fits perfectly under your No Guessing Policy while still protecting you from the "sort-by-column works in model but visual silently ignores it" class of bugs.
+
 **Please verify:**
 - [ ] This rule is correct for your environment
 - [ ] Any exceptions or variations? `___________________________`
@@ -531,12 +580,23 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] Page definition file (`page.json`) complete content
   - [ ] One existing visual folder structure
   - [ ] Confirmation that adding a visual requires updating the page file (or not)
+  - [ ] **Show the exact JSON path where visual IDs are listed (copy that snippet only)**
 
 **Why this matters:** If you skip this, you can generate perfect `visual.json` files that Power BI never even loads.
 
 **Current page.json structure (observed from current files):**
 - Contains: `name`, `displayName`, `displayOption`, `height`, `width`, `pageBinding`, `objects.background`
 - ⚠️ **Missing:** Visual references (need to confirm how visuals are mounted)
+
+**page.json Search Plan - Explicit Investigation (Architecture Note):**
+- **Likely:** `page.json` may contain tab order or visual references, but your sample didn't show visual enumeration.
+- **Action - Explicit Search Plan (not a guess):**
+  - In the golden page folder, inspect:
+    - `page.json` for keys like `visualContainers`, `visuals`, `sections`, `objects`, `tabOrder`
+    - Sibling files in the same page folder (if any)
+    - `definition/pages/pages.json` for cross-page indexing
+  - If none contain mounting references, then your environment may rely on folder discovery or an upstream registry file. That becomes a major rule change.
+- **Generator Rule:** This directly strengthens your "Page Definition Integration" section.
 
 ---
 
@@ -559,6 +619,19 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] `visual.json.name`
   - [ ] Another GUID inside page definition
   - [ ] Other: `___________________________`
+
+**Visual Container Anatomy - Position, Z-Order, and TabOrder (Architecture Note):**
+- **Likely:** Every visual is wrapped in a container with:
+  - `position.x/y/width/height`
+  - `position.z` controlling layering (render order)
+  - `tabOrder` controlling keyboard navigation order (accessibility), and it's independent of z-order
+- **Observed (current files):** You already have position fields including `tabOrder` in at least one visual.
+- **Action - Generator Rule Set:**
+  - `z`: must be unique-ish in layering contexts but can repeat if Power BI tolerates it (confirm in goldens).
+  - `tabOrder`:
+    - Must be unique per page (very likely).
+    - Whether it must be sequential is unknown, confirm via goldens.
+- **Generator Rule:** Rendering order (`z`) and navigation order (`tabOrder`) must be treated as separate dimensions.
 
 **Generator rule:**
 - ✅ REQUIRED: IDs must match golden format and be unique
@@ -588,6 +661,18 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 - [ ] Any report-level filters already defined?
   - [ ] Yes - provide details: `___________________________`
   - [ ] No
+
+### PBIR Modular Folder Map (Architecture Note)
+- **Likely:** PBIR "explodes" report metadata into a `definition/` folder that may include:
+  - `definition/pages/...`
+  - `definition/bookmarks/...`
+  - `definition/report.json` (report-level settings)
+  - `definition/version.json` (PBIR schema versioning)
+- **Observed (current files):** `pages/visuals` structure exists and schema URLs exist.
+- **Action - Checklist Item:**
+  - Verify whether your repo contains `definition/report.json` and `definition/version.json`.
+  - If yes, capture them as part of your minimal golden report package, because report-level defaults can affect visuals.
+- **Generator Rule:** Capture `definition/report.json` and `definition/version.json` if present in goldens.
 
 ### Visual Interactions Defaults
 - [ ] Cross-filter vs none defaults
@@ -705,7 +790,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 ### Line Chart
 
 **Please provide from golden sample:**
-- [ ] Query state bucket: `Data` ✅ (Observed from current files)
+- [ ] Query state bucket: `Data` (Unknown - needs golden)
 - [ ] **Data roles contract (role bucket names + role IDs):**
   - [ ] Category/X-axis role name: `___________________________`
   - [ ] Values/Y-axis role name: `___________________________`
@@ -714,7 +799,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] Role keys are singular or arrays? `___________________________`
   - [ ] Fields appear under `projections` only, or also under `select`/`from`/`where`? `___________________________`
 - [ ] **Projection order within each role:** `___________________________`
-- [ ] `sortDefinition` required: `Yes` ✅ (Observed from current files)
+- [ ] `sortDefinition` required: `Yes` (Unknown - needs golden)
 - [ ] `visualContainerObjects` required: `background`, `border`, `visualHeader`, `title`
 - [ ] **Visual-level filters:**
   - [ ] Does golden contain a `filters` array? `___________________________`
@@ -730,7 +815,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 ### 100% Stacked Column Chart
 
 **Please provide from golden sample:**
-- [ ] Query state bucket: `Data` ✅ (Observed from current files)
+- [ ] Query state bucket: `Data` (Unknown - needs golden)
 - [ ] **Data roles contract (role bucket names + role IDs):**
   - [ ] Category/X-axis role name: `___________________________`
   - [ ] Values/Y-axis role name: `___________________________`
@@ -739,7 +824,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] Role keys are singular or arrays? `___________________________`
   - [ ] Fields appear under `projections` only, or also under `select`/`from`/`where`? `___________________________`
 - [ ] **Projection order within each role:** `___________________________`
-- [ ] `sortDefinition` required: `Yes` ✅ (Observed from current files)
+- [ ] `sortDefinition` required: `Yes` (Unknown - needs golden)
 - [ ] `visualContainerObjects` required: `background`, `border`, `visualHeader`, `title`
 - [ ] **Visual-level filters:**
   - [ ] Does golden contain a `filters` array? `___________________________`
@@ -755,7 +840,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 ### Donut Chart
 
 **Please provide from golden sample:**
-- [ ] Query state bucket: `Data` ✅ (Observed from current files)
+- [ ] Query state bucket: `Data` (Unknown - needs golden)
 - [ ] **Data roles contract (role bucket names + role IDs):**
   - [ ] Legend role name: `___________________________`
   - [ ] Values role name: `___________________________`
@@ -763,7 +848,7 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] Role keys are singular or arrays? `___________________________`
   - [ ] Fields appear under `projections` only, or also under `select`/`from`/`where`? `___________________________`
 - [ ] **Projection order within each role:** `___________________________`
-- [ ] `sortDefinition` required: `No` (Power BI handles automatically) ✅ (Observed from current files)
+- [ ] `sortDefinition` required: `No` (Power BI handles automatically) (Unknown - needs golden)
 - [ ] `visualContainerObjects` required: `background`, `border`, `visualHeader`, `title`
 - [ ] **Visual-level filters:**
   - [ ] Does golden contain a `filters` array? `___________________________`
@@ -901,7 +986,7 @@ For each generated visual, compare to golden sample:
 
 ---
 
-## 1️⃣8️⃣ ADDITIONAL GOTCHAS TO ENCODE
+## ADDITIONAL GOTCHAS TO ENCODE
 
 ### A) PrototypeQuery Requirement
 
@@ -951,7 +1036,7 @@ For each generated visual, compare to golden sample:
 
 ---
 
-## 1️⃣7️⃣ INFORMATION DELIVERY FORMAT
+## INFORMATION DELIVERY FORMAT
 
 **Please provide information in one of these formats:**
 
@@ -973,7 +1058,7 @@ For each generated visual, compare to golden sample:
 
 ---
 
-## 1️⃣8️⃣ NEXT STEPS
+## NEXT STEPS
 
 Once this information is provided:
 
