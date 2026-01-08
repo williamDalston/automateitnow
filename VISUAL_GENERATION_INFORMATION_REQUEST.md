@@ -2,7 +2,7 @@
 
 **Purpose:** Collect all information needed to perfect the visual generation system  
 **Status:** Information Gathering  
-**Version:** 2.1 (Redlines Applied + Critical Additions)
+**Version:** 2.2 (All Redlines Fixed + Missing Sections Added)
 
 **Key Improvements (v2.0):**
 - 🚨 PBIP Dataset Artifact elevated to BLOCKER status
@@ -65,9 +65,9 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
   - [ ] Other: `___________________________`
 
 **Current observation from your files:**
-- `.pbip` uses `artifacts` array with `report` only
-- `definition.pbir` has `datasetReference` pointing to semantic model
-- ⚠️ **Unknown:** Whether `.pbip` should also have `dataset` artifact
+- `.pbip` uses `artifacts` array with `report` only ✅ (Observed from current files)
+- `definition.pbir` has `datasetReference` pointing to semantic model ✅ (Observed from current files)
+- ⚠️ **Unknown:** Whether `.pbip` should also have `dataset` artifact (BLOCKER - needs confirmation)
 
 **Generator rule:**
 - ❌ **FORBIDDEN:** Assume or invent `.pbip` schema structure
@@ -108,6 +108,31 @@ To make the **"precise visual generation method"** work *perfectly* (meaning: ge
 **Please verify:**
 - [ ] Is this the correct structure for your environment?
 - [ ] Are there any additional folders or files required?
+
+---
+
+## 📐 COORDINATE SYSTEM LOCK (CRITICAL)
+
+**Why this matters:** Layout units are not always literal pixels. Generator must match stored units.
+
+**Please provide from a page configured to 1280×720 in Power BI Desktop:**
+- [ ] Page stored `width` value (Observed: `___________________________`)
+- [ ] Page stored `height` value (Observed: `___________________________`)
+- [ ] Confirm units:
+  - [ ] Pixels
+  - [ ] Points
+  - [ ] Power BI internal layout units
+  - [ ] Unknown
+
+**Please provide one visual position example from a golden `visual.json`:**
+- [ ] `position.x`: `___________________________`
+- [ ] `position.y`: `___________________________`
+- [ ] `position.width`: `___________________________`
+- [ ] `position.height`: `___________________________`
+
+**Generator rule:**
+- ✅ REQUIRED: Use the same stored unit system as golden samples
+- ❌ FORBIDDEN: Assume 1280×720 equals stored width/height values
 
 ---
 
@@ -216,6 +241,23 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
   - [ ] Complete folder structure exported
 
 **Why this matters:** That single package becomes the master truth and avoids drift from real report complexity.
+
+---
+
+## 🏷️ VISUALTYPE CANONICAL STRINGS (REQUIRED)
+
+**Why this matters:** `visual.visualType` strings must match exactly what Power BI writes.
+
+**From golden samples, please provide the exact `visual.visualType` for:**
+- [ ] Card (KPI): `___________________________`
+- [ ] Line chart: `___________________________`
+- [ ] Donut chart: `___________________________`
+- [ ] 100% stacked column: `___________________________`
+- [ ] Slicer: `slicer` ✅ (Observed from current files)
+
+**Generator rule:**
+- ✅ REQUIRED: Only use visualType strings observed in golden samples
+- ❌ FORBIDDEN: Invent or "guess" a visualType name
 
 ---
 
@@ -328,34 +370,32 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 
 ---
 
-### Sort-By Column Metadata
+### Sort-By Column Metadata (LOCK)
 
-**Critical for correct sorting:**
+**Critical for correct sorting. Do not assume any sort key exists.**
 
-#### Dim_Date[Month_Year]
-- [ ] **Column exists:** `Month_Year` ✅
-- [ ] **Sort-by column:** `YearMonth` ✅
-- [ ] **Model-level sort set:** `___________________________`
-  - [ ] Yes, set in TMDL
+#### Dim_Date[Year_Month] (Actual display column)
+- [ ] **Column exists:** `Year_Month` ✅ (Observed from current files)
+- [ ] **Sort-by numeric key column exists:** `[numeric_sort_key]` `___________________________`
+  - Examples to check: `YearMonth`, `Year_Month_Sort`, `YearMonthKey`, `YearMonth_Num`
+- [ ] **Model-level SortByColumn is set (TMDL):**
+  - [ ] Yes, `Year_Month SortByColumn = [numeric_sort_key]` (Observed: `___________________________`)
   - [ ] No, needs to be set
   - [ ] Unknown
 
-**Please verify:**
-- [ ] `YearMonth` column exists in `Dim_Date`
-- [ ] Model property: `Month_Year SortByColumn = YearMonth` is set
-- [ ] Formula for `YearMonth`: `YEAR([Date]) * 100 + MONTH([Date])` ✅
+**Please provide from TMDL (exact line or snippet):**
+- [ ] The `Year_Month` column definition including `sortByColumn` reference
 
-#### Top10_Series[Series]
-- [ ] **Column exists:** `Series` ✅
-- [ ] **Sort-by column:** `SortOrder` ✅
-- [ ] **Model-level sort set:** `___________________________`
-  - [ ] Yes, set in TMDL
-  - [ ] No, needs to be set
-  - [ ] Unknown
+**Generator rule:**
+- ✅ REQUIRED: Use `Year_Month` as the display axis label column
+- ✅ REQUIRED: If a numeric sort key exists and is used, set SortByColumn at model-level
+- ❌ FORBIDDEN: Invent a sort key column name if it does not exist in the model
 
-**Please verify:**
-- [ ] `SortOrder` column exists in `Top10_Series`
-- [ ] Model property: `Series SortByColumn = SortOrder` is set
+#### Top10_Series[Series] (If table exists)
+- [ ] Table `Top10_Series` exists? `___________________________`
+- [ ] Column `Series` exists? `___________________________`
+- [ ] Column `SortOrder` exists? `___________________________`
+- [ ] Model-level SortByColumn set: `Series SortByColumn = SortOrder` (Observed: `___________________________`)
 
 ---
 
@@ -424,13 +464,13 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 **Please confirm implementation:**
 
 #### Option A: Model-Level Only
-- [ ] Set model property: `Dim_Date[Year_Month] SortByColumn = Dim_Date[YearMonth]` (or equivalent)
+- [ ] Set model property: `Dim_Date[Year_Month] SortByColumn = Dim_Date[[numeric_sort_key]]` (or equivalent)
 - [ ] Visual sortDefinition sorts by `Dim_Date[Year_Month]` (ascending)
 - [ ] Power BI uses model-level sort automatically
 
 #### Option B: Both Model + Visual
-- [ ] Set model property: `Dim_Date[Year_Month] SortByColumn = Dim_Date[YearMonth]` (or equivalent)
-- [ ] Visual sortDefinition explicitly sorts by `Dim_Date[YearMonth]` (ascending)
+- [ ] Set model property: `Dim_Date[Year_Month] SortByColumn = Dim_Date[[numeric_sort_key]]` (or equivalent)
+- [ ] Visual sortDefinition explicitly sorts by `Dim_Date[[numeric_sort_key]]` (ascending)
 - [ ] Redundant but bulletproof
 
 **Please specify:**
@@ -439,8 +479,8 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 - [ ] From golden samples, what does sortDefinition actually reference? `___________________________`
 
 **Locked Rule (to be confirmed from goldens):**
-1. Generator MUST set model property: `Dim_Date[Year_Month] SortByColumn = [numeric_sort_key]`
-2. Visual MUST include a sortDefinition - **reference format to be confirmed from golden samples**
+1. Generator MUST set model property: `Dim_Date[Year_Month] SortByColumn = [numeric_sort_key]` (if sort key exists)
+2. Visual MUST include a sortDefinition - **reference format to be confirmed from golden samples** (usually references display column `Year_Month`, not sort key directly)
 
 **Please verify:**
 - [ ] This rule is correct for your environment
@@ -497,6 +537,32 @@ Instead of hunting samples across your real report, provide a **tiny "Golden PBI
 **Current page.json structure (observed from current files):**
 - Contains: `name`, `displayName`, `displayOption`, `height`, `width`, `pageBinding`, `objects.background`
 - ⚠️ **Missing:** Visual references (need to confirm how visuals are mounted)
+
+---
+
+## 🆔 IDENTITY & STABLE IDs RULES (CRITICAL)
+
+**Why this matters:** Page mounting can depend on IDs. Collisions break loads silently.
+
+**Please provide observed formats from your current report folders:**
+- [ ] Page folder ID format (length + charset): `___________________________`
+- [ ] Visual folder ID format (length + charset): `___________________________`
+- [ ] `visual.json.name` format: `___________________________`
+- [ ] `tabOrder` uniqueness expectations:
+  - [ ] Must be unique per page
+  - [ ] Must be sequential
+  - [ ] Other: `___________________________`
+
+**Mounting reference check (must be explicit):**
+- [ ] Page references visuals by:
+  - [ ] Visual folder ID
+  - [ ] `visual.json.name`
+  - [ ] Another GUID inside page definition
+  - [ ] Other: `___________________________`
+
+**Generator rule:**
+- ✅ REQUIRED: IDs must match golden format and be unique
+- ❌ FORBIDDEN: Reuse visual IDs or visual `name` values across a page
 
 ---
 
@@ -885,43 +951,7 @@ For each generated visual, compare to golden sample:
 
 ---
 
-## 1️⃣9️⃣ CURRENT OBSERVATIONS (To Be Verified)
-
-### From Your Existing Files
-
-**PBIP Structure:**
-- Schema: `https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json`
-- Version: `1.0`
-- Artifacts: `report` and `dataset` (semantic model)
-
-**Semantic Model:**
-- Format: TMDL ✅
-- Version: `4.2`
-- Compatibility level: `1601`
-
-**Report:**
-- Visual schema: `2.4.0`
-- Page structure: `pages/{page_id}/visuals/{visual_id}/visual.json`
-
-**QueryRef Pattern:**
-- Format: `TableName.FieldName` (dot notation)
-- Example: `"Dim_Press_Releases.Page_Type"`
-
-**NativeQueryRef Pattern:**
-- Format: `FieldName` (no table prefix)
-- Example: `"Page_Type"`
-
-**Relationships:**
-- `Fact_Press_Analytics[Date] → Dim_Date[Date]` ✅
-- `Fact_Press_Analytics[Page_URL] → Dim_Press_Releases[Page_URL]` ✅
-
-**Please verify:**
-- [ ] All observations correct?
-- [ ] Any discrepancies?
-
----
-
-## 2️⃣0️⃣ INFORMATION DELIVERY FORMAT
+## 1️⃣7️⃣ INFORMATION DELIVERY FORMAT
 
 **Please provide information in one of these formats:**
 
@@ -943,7 +973,7 @@ For each generated visual, compare to golden sample:
 
 ---
 
-## 2️⃣1️⃣ NEXT STEPS
+## 1️⃣8️⃣ NEXT STEPS
 
 Once this information is provided:
 
@@ -974,65 +1004,63 @@ Once this information is provided:
 
 ## 📊 CURRENT OBSERVATIONS SUMMARY
 
-### ✅ Confirmed from Existing Files
+### ✅ Observed from current files (not assumptions)
 
-**PBIP Structure:**
+**PBIP (.pbip):**
 - Schema: `https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json`
 - Version: `1.0`
-- ⚠️ **Missing:** `dataset` artifact in `.pbip` file (only `report` present)
-- Should include: `{"dataset": {"path": "press-room-dashboard.SemanticModel"}}`
+- Observed: `.pbip` includes `report` artifact only
+- Observed: dataset is referenced via `definition.pbir.datasetReference`
+- Unknown: whether `.pbip` must also include a `dataset` artifact in your environment (BLOCKER)
 
 **Semantic Model:**
-- Format: TMDL ✅
-- Version: `4.2` (from `definition.pbism`)
-- Compatibility level: `1601`
-- Schema: `https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json`
+- Format: TMDL ✅ (Observed from current files)
+- Version: `4.2` (from `definition.pbism`) ✅ (Observed from current files)
+- Compatibility level: `1601` ✅ (Observed from current files)
 
 **Report:**
-- Visual schema: `2.4.0` (from visual.json `$schema`)
-- Report schema: `4.0` (from `definition.pbir`)
-- Page structure: `pages/{page_id}/visuals/{visual_id}/visual.json` ✅
+- Visual schema: `2.4.0` (from visual.json `$schema`) ✅ (Observed from current files)
+- Report schema: `4.0` (from `definition.pbir`) ✅ (Observed from current files)
+- Page structure: `pages/{page_id}/visuals/{visual_id}/visual.json` ✅ (Observed from current files)
 
 **QueryRef Pattern (from slicer sample):**
-- Format: `TableName.FieldName` (dot notation) ✅
-- Example: `"Dim_Press_Releases.Page_Type"`
-- Spaces/underscores preserved exactly ✅
+- Format: `TableName.FieldName` (dot notation) ✅ (Observed from current files)
+- Example: `"Dim_Press_Releases.Page_Type"` ✅ (Observed from current files)
+- Spaces/underscores preserved exactly ✅ (Observed from current files)
 
 **NativeQueryRef Pattern (from slicer sample):**
-- Format: `FieldName` (no table prefix) ✅
-- Example: `"Page_Type"`
+- Format: `FieldName` (no table prefix) ✅ (Observed from current files)
+- Example: `"Page_Type"` ✅ (Observed from current files)
 
 **Relationships:**
-- `Fact_Press_Analytics[Date] → Dim_Date[Date]` ✅ (active, many-to-one)
-- `Fact_Press_Analytics[Page_URL] → Dim_Press_Releases[Page_URL]` ✅ (active, many-to-one)
+- `Fact_Press_Analytics[Date] → Dim_Date[Date]` ✅ (Observed from current files - active, many-to-one)
+- `Fact_Press_Analytics[Page_URL] → Dim_Press_Releases[Page_URL]` ✅ (Observed from current files - active, many-to-one)
 
 **Date Column Types:**
-- `Fact_Press_Analytics[Date]`: `dateTime` ✅
-- `Dim_Date[Date]`: `dateTime` ✅
-- **Match:** Yes ✅
+- `Fact_Press_Analytics[Date]`: `dateTime` ✅ (Observed from current files)
+- `Dim_Date[Date]`: `dateTime` ✅ (Observed from current files)
+- **Match:** Yes ✅ (Observed from current files)
 
-**Dim_Date Columns:**
-- `Date` (dateTime, key) ✅
-- `Year_Month` (string) - **Note:** Not `Month_Year` as in spec
-- `Month_Name` (string, sortByColumn: `Month`) ✅
-- `Day_Of_Week` (string, sortByColumn: `Day_Of_Week_Number`) ✅
-- ⚠️ **Missing:** `Month_Year` column (spec references this)
-- ⚠️ **Missing:** `YearMonth` column (spec references this for sorting)
+**Dim_Date:**
+- Observed: `Year_Month` exists (display month label) ✅
+- Observed: `Month_Year` does not exist
+- Observed: `YearMonth` sort key not found (needs confirmation or alternative numeric sort key)
 
 **DAX Locale:**
-- Comma separators used in TMDL ✅
-- Format strings: `#,0`, `0.0%` ✅
+- Comma separators used in TMDL ✅ (Observed from current files)
+- Format strings: `#,0`, `0.0%` ✅ (Observed from current files)
 
 ### ⚠️ Discrepancies to Resolve
 
 1. **Spec references `Month_Year` but model has `Year_Month`**
-   - Need to confirm: Use `Year_Month` or create `Month_Year`?
+   - Resolution: Use `Year_Month` (actual model column) and resolve `Month_Year` via alias map
 
 2. **Spec references `YearMonth` sort key but not found in model**
-   - Need to confirm: Create `YearMonth` column or use different approach?
+   - Resolution: Need to confirm if numeric sort key exists, or create one, or use alternative approach
 
-3. **PBIP missing dataset artifact**
-   - Should include: `{"dataset": {"path": "press-room-dashboard.SemanticModel"}}`
+3. **PBIP dataset artifact location**
+   - Observed: Dataset referenced in `definition.pbir` only
+   - Unknown: Whether `.pbip` must also include `dataset` artifact (BLOCKER)
 
 4. **Need golden samples for:**
    - Card visual
