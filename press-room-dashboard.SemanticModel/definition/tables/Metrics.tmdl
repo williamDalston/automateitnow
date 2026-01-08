@@ -29,11 +29,11 @@ table Metrics
 		lineageTag: pr-m-landingviews
 
 	/// Total page views for all press release pages.
-	measure 'Press Release Views' = ```
-			
-			SUM(PressRelease_Summary[Total Views])
-			
-			```
+	measure 'Press Release Views' =
+			CALCULATE(
+			    [Total Views],
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
 		formatString: #,0
 		displayFolder: 01 - Core KPIs
 		lineageTag: pr-m-releaseviews
@@ -462,6 +462,78 @@ table Metrics
 		displayFolder: 03 - Distribution
 		lineageTag: pr-m-remainingpct
 		isHidden: true
+
+	/// Total views for the top 10 press releases by views. Top 10 is determined across the selected date range, then shown over time (fixed set).
+	measure 'Top 10 PR Views' =
+			VAR prTableAllDates =
+			    SUMMARIZE(
+			        FILTER(
+			            ALLSELECTED(Fact_Press_Analytics),
+			            Fact_Press_Analytics[Page_Type] = "Press Release"
+			        ),
+			        Fact_Press_Analytics[Page_URL],
+			        "__Views", SUM(Fact_Press_Analytics[Views])
+			    )
+			VAR top10 =
+			    TOPN(10, prTableAllDates, [__Views], DESC)
+			VAR top10Urls =
+			    SELECTCOLUMNS(
+			        top10,
+			        "Page_URL", Fact_Press_Analytics[Page_URL]
+			    )
+			RETURN
+			    CALCULATE(
+			        SUM(Fact_Press_Analytics[Views]),
+			        Fact_Press_Analytics[Page_Type] = "Press Release",
+			        TREATAS(top10Urls, Fact_Press_Analytics[Page_URL])
+			    )
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-top10prviews
+
+	/// Total views for press releases not in the top 10.
+	measure 'Remaining PR Views' = [Press Release Views] - [Top 10 PR Views]
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-remainingprviews
+
+	/// Share of total Press Release Views coming from the top 10 releases by views.
+	measure 'Top 10 Share' = DIVIDE([Top 10 PR Views], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-top10share
+
+	/// Switch measure for Top 10 vs Remaining stacked chart. Returns Top 10 PR Views or Remaining PR Views based on selected series.
+	measure 'Top10 Series Value' =
+			SWITCH(
+			    SELECTEDVALUE(Top10_Series[Series]),
+			    "Top 10", [Top 10 PR Views],
+			    "Remaining", [Remaining PR Views],
+			    BLANK()
+			)
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-top10seriesvalue
+
+	/// Total unique users for press releases only.
+	measure 'Press Release Users' =
+			CALCULATE(
+			    [Total Users],
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-prusers
+
+	/// Total unique users for press room homepage only.
+	measure 'Landing Page Users' =
+			CALCULATE(
+			    [Total Users],
+			    Fact_Press_Analytics[Page_Type] = "Landing Page"
+			)
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-landingusers
 
 	/// Organic search views for press release pages only.
 	measure 'Organic Search Views (Press Releases Only)' =

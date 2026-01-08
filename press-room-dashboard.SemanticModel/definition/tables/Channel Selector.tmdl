@@ -135,16 +135,11 @@ table 'Channel Selector'
 		formatString: 0
 		lineageTag: f1540857-68f4-4486-956e-68b06f004b64
 
-	measure 'Top 10 Share' = ```
-			
-			DIVIDE(
-			    [Top 10 Views],
-			    [Press Release Views]
-			)
-			
-			```
-		formatString: 0.0%;-0.0%;0.0%
+	/// DEPRECATED: Use Metrics[Top 10 Share] instead. This measure is kept for backward compatibility.
+	measure 'Top 10 Share' = Metrics[Top 10 Share]
+		formatString: 0.0%
 		lineageTag: 69c979c8-1f5a-4bcc-a88a-b6319a12e5e5
+		isHidden: true
 
 	measure 'Top 10 Concentration Signal' = ```
 			

@@ -1,8 +1,10 @@
 # 🎯 PRECISE VISUAL GENERATION METHOD
 
-**Version:** 1.0  
-**Status:** Production-Ready  
-**Purpose:** Exact, step-by-step method for generating Power BI visuals from specification
+**Version:** 2.0  
+**Status:** Production-Ready (Evidence-Based)  
+**Purpose:** Exact, step-by-step method for generating Power BI visuals from specification  
+**Last Updated:** 2026-01-08  
+**Evidence Source:** `VISUAL_GENERATION_EVIDENCE_REPORT.md`
 
 ---
 
@@ -14,6 +16,128 @@ This document provides **precise, executable instructions** for generating Power
 2. **Field mapping rules** (table/column/measure references)
 3. **Required properties** (must-have vs optional)
 4. **Validation checklist** (pre-generation verification)
+
+---
+
+## ✅ CONFIRMED STRUCTURES (From Observed Files)
+
+### PBIP/PBIR Structure
+
+**✅ Confirmed:**
+- `.pbip` contains `artifacts` array with only `"report"` artifact (no `"dataset"` in root .pbip)
+- Dataset binding lives in `definition.pbir` via `datasetReference.byPath.path`
+- Report schema: `3.0.0` (from `report.json`)
+- Visual schema: `2.4.0` (from `visual.json` $schema)
+- Page schema: `2.0.0` (from `page.json` $schema)
+
+**Generator Contract:**
+```json
+// Root .pbip
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
+  "version": "1.0",
+  "artifacts": [
+    { "report": { "path": "{{REPORT_FOLDER}}" } }
+  ]
+}
+
+// definition.pbir
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json",
+  "version": "4.0",
+  "datasetReference": {
+    "byPath": {
+      "path": "../{{SEMANTIC_MODEL_FOLDER}}"
+    }
+  }
+}
+```
+
+### PBIR Folder Map
+
+**✅ Confirmed Required Files:**
+- `definition/version.json` (version `2.0.0`)
+- `definition/report.json` (schema `3.0.0`)
+- `definition/pages/pages.json` (controls `pageOrder`, `activePageName`)
+- `definition/pages/<page_id>/page.json` (page metadata, dimensions)
+- `definition/pages/<page_id>/visuals/<visual_id>/visual.json` (visual definitions)
+
+**Generator Contract:** Emit all files in correct folder structure. Visuals are discovered via folder structure (not explicitly enumerated in page.json).
+
+### Coordinate System
+
+**✅ Confirmed:**
+- Page dimensions stored as numbers: `width: 1280`, `height: 720`
+- Visual position uses **decimal values** (floats):
+  - `x`, `y`, `width`, `height` (can be decimals like `885.08015209635`)
+  - `z`, `tabOrder` (integers in observed files, but allow decimals)
+- Units not specified in JSON (treat as "Power BI stored units")
+
+**Generator Contract:**
+- Do NOT round coordinates to integers
+- Allow floats everywhere in `position`
+- Do NOT claim "pixels" or "points" as a rule (units not evidenced)
+
+### QueryRef / nativeQueryRef Patterns
+
+**✅ Confirmed for Columns:**
+- `queryRef`: `Table.Column` (dot notation, no brackets, preserves underscores)
+- `nativeQueryRef`: `Column` only (column name, no table prefix, preserves underscores)
+- Pattern observed: `"Dim_Date.Date"` → `queryRef: "Dim_Date.Date"`, `nativeQueryRef: "Date"`
+- Pattern observed: `"Dim_Press_Releases.Page_Type"` → `queryRef: "Dim_Press_Releases.Page_Type"`, `nativeQueryRef: "Page_Type"`
+
+**Generator Contract (Columns):**
+```json
+{
+  "queryRef": "{{TABLE_NAME}}.{{COLUMN_NAME}}",
+  "nativeQueryRef": "{{COLUMN_NAME}}",
+  "active": true
+}
+```
+
+**❌ UNKNOWN for Measures:**
+- Measure `queryRef`/`nativeQueryRef` patterns (especially measures with spaces like `"Total Views"`)
+- **DO NOT assume:** Requires golden Card sample to confirm
+- **Current hypothesis (NOT CONFIRMED):** `queryRef: "Metrics.Total Views"`, `nativeQueryRef: "Total Views"` (preserves spaces)
+
+### Visual Sorting Structure
+
+**✅ Confirmed for Slicer:**
+```json
+"sortDefinition": {
+  "sort": [
+    {
+      "field": {
+        "Column": {
+          "Expression": { "SourceRef": { "Entity": "{{TABLE}}" } },
+          "Property": "{{COLUMN}}"
+        }
+      },
+      "direction": "Ascending"
+    }
+  ],
+  "isDefaultSort": true
+}
+```
+
+**Generator Contract (Slicer):**
+- SortDefinition references display column directly (not sortByColumn key)
+- Sort field must appear in projections
+
+**❌ UNKNOWN for Charts:**
+- Chart sorting behavior (what sortDefinition looks like for Line/Stacked Column)
+- Whether charts use display column or numeric sort key
+- Whether sort field must appear in projections (even if hidden)
+
+### Model Sorting Compliance
+
+**✅ Fixed:**
+- `Dim_Date[Year_Month]` now has `sortByColumn: YearMonth`
+- `YearMonth` numeric key exists (YYYYMM format, hidden)
+
+**Generator Contract:**
+- When using `Year_Month` on axis, visual `sortDefinition` should reference `YearMonth` (numeric key) for proper chronological sorting
+- If model lacks sortByColumn, risk lexical sorting (alphabetical "2024-01", "2024-10", "2024-02" instead of chronological)
 
 ---
 
@@ -74,9 +198,121 @@ visual.json
 
 **Every projection MUST have:**
 - `field` - Field reference (Measure or Column)
-- `queryRef` - Full reference: `TableName.ColumnName` or `TableName.MeasureName`
-- `nativeQueryRef` - Short name: `ColumnName` or `MeasureName`
-- `active: true` - **CRITICAL:** Without this, visual won't show data
+- `queryRef` - Full reference: `TableName.ColumnName` or `TableName.MeasureName` (✅ confirmed for columns, ❌ unknown for measures)
+- `nativeQueryRef` - Short name: `ColumnName` or `MeasureName` (✅ confirmed for columns, ❌ unknown for measures)
+- `active: true` - **CRITICAL:** Without this, visual won't show data (✅ confirmed required)
+
+---
+
+## ⚠️ CONDITIONAL RULES (Require Validation)
+
+### 1. PBIP Dataset Artifact
+
+**Current Observation:**
+- `.pbip` contains only `"report"` artifact (no `"dataset"` observed)
+
+**Conditional Rule:**
+- If Power BI requires it in your build, `.pbip` must include both `report` and `dataset` artifacts
+- **Until proven:** Keep as conditional check, not hard blocker
+- **Validation required:** Compare against freshly created PBIP on same Desktop build
+
+### 2. Visual Mounting Mechanism
+
+**Current Observation:**
+- Visuals NOT explicitly listed in `page.json` or `pages.json`
+- Visual ID string search found no references outside visual's own JSON file
+- Visuals appear to be discovered via folder structure
+
+**Conditional Rule:**
+- Mounting = create visual folder + visual.json
+- **Until proven:** Must validate via rename test (rename visual folder, observe PBIP behavior)
+- **Validation required:** Manual rename test in Power BI Desktop
+
+---
+
+## ❌ EXPLICIT UNKNOWNS (Blockers for Perfect Generation)
+
+### 1. Power BI Desktop Version/Build
+
+**Status:** Must be copied manually from Help → About
+
+**Impact:** May affect schema compatibility, artifact requirements
+
+### 2. Golden Visual Samples
+
+**Missing:**
+- Card visual (for measure queryRef patterns)
+- Line chart (for chart role buckets, sorting behavior)
+- Donut chart (for chart role buckets)
+- 100% stacked column chart (for chart role buckets, sorting behavior)
+
+**Impact:** Cannot generate these visual types with complete confidence
+
+### 3. Measure QueryRef Patterns
+
+**Unknown:**
+- Exact `queryRef` format for measures with spaces (e.g., `"Total Views"`)
+- Exact `nativeQueryRef` format for measures with spaces
+- Whether spaces are preserved or escaped
+
+**Impact:** Card visuals using measures cannot be generated accurately
+
+### 4. Chart Role Buckets
+
+**Unknown:**
+- QueryState bucket name for charts (is it `Data` or `Values`?)
+- Projection role bucket names for charts (Category, Y, Legend, Tooltips, Values, etc.)
+- Which roles are required vs optional
+
+**Impact:** Chart visuals cannot be generated with correct field well structure
+
+### 5. Chart Sorting Behavior
+
+**Unknown:**
+- Whether charts use display column or numeric sort key in `sortDefinition`
+- Whether sort field must appear in projections (even if hidden/tooltip role)
+- SortDefinition structure for charts (may differ from slicer)
+
+**Impact:** Chart visuals may have incorrect or missing sorting
+
+### 6. Page Mounting Confirmation
+
+**Unknown:**
+- Whether visual mounting is truly folder-discovery or depends on hidden index
+- What happens if visual folder is renamed (does visual disappear? error? unchanged?)
+
+**Impact:** Visual generation may fail if mounting mechanism is misunderstood
+
+---
+
+## 🔒 GENERATOR CONSTRAINTS
+
+Based on observed evidence:
+
+1. **Coordinate System:**
+   - Use floats for `x`, `y`, `width`, `height` (do not round)
+   - `z` and `tabOrder` can be integers or floats (allow both)
+   - Page dimensions: `1280 × 720` (stored as numbers)
+
+2. **Visual Structure:**
+   - `visualContainerObjects` REQUIRED for cards/charts
+   - `visualContainerObjects` NOT ALLOWED for slicers
+   - `active: true` REQUIRED on all projections
+
+3. **Field References:**
+   - Column pattern: `queryRef: "Table.Column"`, `nativeQueryRef: "Column"` (✅ confirmed)
+   - Measure pattern: UNKNOWN (❌ requires golden Card sample)
+
+4. **Schema Versions:**
+   - Visual schema: `2.4.0` (from `visual.json` $schema)
+   - Report schema: `3.0.0` (from `report.json` $schema)
+   - Page schema: `2.0.0` (from `page.json` $schema)
+   - Report definition schema: `4.0` (from `definition.pbir` version)
+
+5. **VisualType Canonical Strings:**
+   - ✅ Observed: `slicer`, `actionButton`
+   - ❌ Unknown: `card`, `lineChart`, `donutChart`, `hundredPercentStackedColumnChart` (exact casing)
+   - **REQUIRED:** Match case exactly (`slicer` vs `Slicer` is fatal)
 
 ---
 
@@ -197,16 +433,19 @@ visual.json
    - Always use `Measure` type (never `Column` for KPIs)
 
 2. **Position Calculation:**
-   - Use grid system: `margin: 20px`, `gap: 20px`
-   - KPI cards: Standard size `184px × 88px` (or from spec)
+   - Use grid system: `margin: 20`, `gap: 20` (numeric values, not "px")
+   - KPI cards: Standard size `184 × 88` (or from spec)
    - Calculate X: `margin + (index * (width + gap))`
    - Calculate Y: `header_height + margin`
+   - **Allow floats** (do not round to integers - observed values include decimals)
 
-3. **Z-Index:**
-   - Cards: `1000-1999` range
-   - Charts: `2000-2999` range
-   - Slicers: `100-999` range
-   - Backgrounds: `0-99` range
+3. **Z-Index and Tab Order:**
+   - Cards: `z: 1000-1999` range (observed range, allow floats)
+   - Charts: `z: 2000-2999` range (observed range, allow floats)
+   - Slicers: `z: 100-999` range (observed range, allow floats)
+   - Backgrounds: `z: 0-99` range (observed range, allow floats)
+   - `tabOrder`: Can match `z` or be calculated independently (observed pattern varies)
+   - **Constraint:** `z` and `tabOrder` are separate axes (layering vs keyboard navigation)
 
 4. **Validation:**
    - [ ] Measure exists in semantic model
