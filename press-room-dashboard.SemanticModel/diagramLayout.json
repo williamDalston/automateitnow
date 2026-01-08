@@ -1,0 +1,228 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 852,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 852.36163941535983,
+            "y": 99
+          },
+          "nodeIndex": "Channel Selector",
+          "nodeLineageTag": "pr-param-channel",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 334.1847511806298,
+            "y": -22.195050904890223
+          },
+          "nodeIndex": "Dim_Date",
+          "nodeLineageTag": "pr-dim-date-001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1136.3616394153598,
+            "y": 75
+          },
+          "nodeIndex": "Metric Selector",
+          "nodeLineageTag": "pr-param-metric",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1420.3616394153598,
+            "y": 25
+          },
+          "nodeIndex": "Metrics",
+          "nodeLineageTag": "pr-metrics-001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": -41.129941727546026
+          },
+          "nodeIndex": "Fact_Press_Analytics",
+          "nodeLineageTag": "2c40cff1-6f00-4deb-9d37-6d767f3a16ce",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1654.3616394153598,
+            "y": 59.064970863773
+          },
+          "nodeIndex": "Dim_Press_Releases",
+          "size": {
+            "height": 248,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1938.3616394153598,
+            "y": 33.064970863773
+          },
+          "nodeIndex": "LocalDateTable_d2e74c37-5e9f-44eb-a155-c59c68877438",
+          "nodeLineageTag": "87a51f01-b692-4804-87c2-3673fb2cea41",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2222.3616394153596,
+            "y": 33.064970863773
+          },
+          "nodeIndex": "press_room_data",
+          "nodeLineageTag": "pr-fact-001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2456.3616394153596,
+            "y": 87.097456295659526
+          },
+          "nodeIndex": "Chart_Category",
+          "nodeLineageTag": "chart-category-001",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2740.3616394153596,
+            "y": 123.09745629565953
+          },
+          "nodeIndex": "Top10_Series",
+          "nodeLineageTag": "top10-series-001",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2974.3616394153596,
+            "y": 75.097456295659526
+          },
+          "nodeIndex": "data",
+          "nodeLineageTag": "a91f81d8-7449-427b-8dce-dd846ad29091",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3258.3616394153596,
+            "y": 75.097456295659526
+          },
+          "nodeIndex": "Metric_Dictionary",
+          "nodeLineageTag": "metric-dictionary-001",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3492.3616394153596,
+            "y": 75.097456295659526
+          },
+          "nodeIndex": "Landing_Page_Channel_Metrics",
+          "nodeLineageTag": "landing-metrics-001",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3776.3616394153596,
+            "y": 111.09745629565953
+          },
+          "nodeIndex": "PR_Distribution_Categories",
+          "nodeLineageTag": "pr-dist-001",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 4060.3616394153596,
+            "y": 111.09745629565953
+          },
+          "nodeIndex": "Traffic_Breakdown_Categories",
+          "nodeLineageTag": "traffic-breakdown-001",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 4294.36163941536,
+            "y": 87.097456295659526
+          },
+          "nodeIndex": "PressRelease_Summary",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

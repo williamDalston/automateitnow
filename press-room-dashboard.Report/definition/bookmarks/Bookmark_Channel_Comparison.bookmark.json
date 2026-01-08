@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "displayName": "Channel Comparison",
+  "name": "Bookmark_Channel_Comparison",
+  "options": {
+    "targetVisualNames": [],
+    "suppressActiveSection": true
+  },
+  "explorationState": {
+    "version": "1.0",
+    "activeSection": "channels",
+    "sections": {
+      "channels": {
+        "visualContainers": {}
+      }
+    }
+  }
+}

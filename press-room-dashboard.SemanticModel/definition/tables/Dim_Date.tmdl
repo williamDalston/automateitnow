@@ -1,0 +1,159 @@
+/// Date dimension table with calendar attributes (Year, Quarter, Month, Day of Week, etc.) and YTD flag for time intelligence calculations.
+table Dim_Date
+	lineageTag: pr-dim-date-001
+	dataCategory: Time
+
+	/// Primary date key for time-based analysis
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: Short Date
+		lineageTag: pr-dimdate-date
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Calendar year (e.g., 2025). Top level of the date hierarchy.
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: pr-dimdate-year
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Calendar quarter number (1-4). Used for quarterly performance analysis.
+	column Quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: pr-dimdate-quarter
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Month number (1-12). Enables month-over-month comparisons.
+	column Month
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: pr-dimdate-month
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Full month name (e.g., January, February). Displayed in reports for readability.
+	column Month_Name
+		dataType: string
+		lineageTag: pr-dimdate-monthname
+		summarizeBy: none
+		sourceColumn: Month_Name
+		sortByColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Day of month (1-31). Enables daily granularity analysis.
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: pr-dimdate-day
+		summarizeBy: none
+		sourceColumn: Day
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Day name (e.g., Monday, Tuesday). Used for day-of-week performance analysis.
+	column Day_Of_Week
+		dataType: string
+		lineageTag: pr-dimdate-dayofweek
+		summarizeBy: none
+		sourceColumn: Day_Of_Week
+		sortByColumn: Day_Of_Week_Number
+
+		annotation SummarizationSetBy = Automatic
+
+	/// ISO week number (1-53). Enables week-over-week trending.
+	column Week_Of_Year
+		dataType: int64
+		formatString: 0
+		lineageTag: pr-dimdate-weekofyear
+		summarizeBy: none
+		sourceColumn: Week_Of_Year
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Year-Month formatted as text (e.g., '2025-03'). Useful for sorting and labeling.
+	column Year_Month
+		dataType: string
+		lineageTag: pr-dimdate-yearmonth
+		summarizeBy: none
+		sourceColumn: Year_Month
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Boolean flag indicating if date is within current year-to-date period for time intelligence calculations
+	column Is_YTD
+		dataType: boolean
+		lineageTag: pr-dimdate-isytd
+		summarizeBy: none
+		sourceColumn: Is_YTD
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Day of week number (1=Monday, 7=Sunday). Used for sorting Day_Of_Week column.
+	column Day_Of_Week_Number = WEEKDAY(Dim_Date[Date], 2)
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 68d283a3-f4f8-4796-b0ec-8ddc88bf6776
+		summarizeBy: none
+
+	/// Calendar hierarchy for drilling down from Year to Day
+	hierarchy 'Date Hierarchy'
+		lineageTag: a1dae517-9582-4814-aac5-0268b070661b
+
+		level Year
+			lineageTag: 9e29329a-ab1a-48de-bc30-e2cf3f5823ec
+			column: Year
+
+		level Quarter
+			lineageTag: 08150e78-ca8d-40e6-845c-82e1c24f815a
+			column: Quarter
+
+		level Month
+			lineageTag: f63d5ff9-bda2-45a6-9064-a172fe266ec4
+			column: Month_Name
+
+		level Date
+			lineageTag: 22dc3f33-7659-4cb8-8571-c06af45b928b
+			column: Date
+
+	partition Dim_Date = m
+		mode: import
+		source =
+				let
+				    StartDate = #date(2024, 1, 1),
+				    EndDate = Date.From(DateTime.LocalNow()),
+				    NumberOfDays = Duration.Days(EndDate - StartDate) + 1,
+				    DateList = List.Dates(StartDate, NumberOfDays, #duration(1,0,0,0)),
+				    DateTable = Table.FromList(DateList, Splitter.SplitByNothing(), {"Date"}, null, ExtraValues.Error),
+				    TypedDate = Table.TransformColumnTypes(DateTable, {{"Date", type date}}),
+				    AddYear = Table.AddColumn(TypedDate, "Year", each Date.Year([Date]), Int64.Type),
+				    AddMonth = Table.AddColumn(AddYear, "Month", each Date.Month([Date]), Int64.Type),
+				    AddMonthName = Table.AddColumn(AddMonth, "Month_Name", each Date.MonthName([Date]), type text),
+				    AddDay = Table.AddColumn(AddMonthName, "Day", each Date.Day([Date]), Int64.Type),
+				    AddDayOfWeek = Table.AddColumn(AddDay, "Day_Of_Week", each Date.DayOfWeekName([Date]), type text),
+				    AddWeekOfYear = Table.AddColumn(AddDayOfWeek, "Week_Of_Year", each Date.WeekOfYear([Date]), Int64.Type),
+				    AddQuarter = Table.AddColumn(AddWeekOfYear, "Quarter", each Date.QuarterOfYear([Date]), Int64.Type),
+				    AddYearMonth = Table.AddColumn(AddQuarter, "Year_Month", each Text.From([Year]) & "-" & Text.PadStart(Text.From([Month]), 2, "0"), type text),
+				    AddIsYTD = Table.AddColumn(AddYearMonth, "Is_YTD", each [Year] = Date.Year(DateTime.LocalNow()), type logical)
+				in
+				    AddIsYTD
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,37 @@
+/// HHS Press Room Analytics - Executive dashboard tracking press release performance, traffic sources, and engagement metrics. Data sourced from Google Analytics 4 (GA4) exports covering press room pages on HHS.gov. Supports YTD, WoW, MoM, and YoY time intelligence calculations. Primary fact table: Fact_Press_Analytics. Date dimension: Dim_Date (marked as date table). Reference data: Dim_Press_Releases (canonical list of top press releases). Auto date/time: DISABLED for optimal performance.
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["Dim_Date","Fact_Press_Analytics","press_room_data","data"]
+
+annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling"]
+
+ref table Dim_Date
+ref table Metrics
+ref table 'Metric Selector'
+ref table 'Channel Selector'
+ref table Fact_Press_Analytics
+ref table Dim_Press_Releases
+ref table press_room_data
+ref table LocalDateTable_d2e74c37-5e9f-44eb-a155-c59c68877438
+ref table DateTableTemplate_660d2cfc-b034-462f-8743-c2fda0af464d
+ref table Top10_Series
+ref table Chart_Category
+ref table Metric_Dictionary
+ref table data
+ref table Traffic_Breakdown_Categories
+ref table PR_Distribution_Categories
+ref table Landing_Page_Channel_Metrics
+ref table PressRelease_Summary
+
+ref perspective 'Core Analytics'
+
+ref cultureInfo en-US
+

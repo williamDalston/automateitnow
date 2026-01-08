@@ -1,0 +1,33 @@
+/// Helper table for Top 10 vs Remaining chart series. Defines the two series: "Top 10" and "Remaining".
+table Top10_Series
+	lineageTag: top10-series-001
+
+	column Series
+		lineageTag: a8d976f6-9218-494c-a8ca-9044db3329ba
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Series]
+
+		annotation SummarizationSetBy = Automatic
+
+	column SortOrder
+		formatString: 0
+		lineageTag: 0b0f8184-be90-4ba6-a5ce-c493aa3ebfdc
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [SortOrder]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Top10_Series = calculated
+		mode: import
+		source =
+				DATATABLE(
+					    "Series", STRING,
+					    "SortOrder", INTEGER,
+					    {
+					        {"Top 10", 1},
+					        {"Remaining", 2}
+					    }
+					)
+

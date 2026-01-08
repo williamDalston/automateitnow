@@ -1,0 +1,46 @@
+/// Helper table for Landing Page metrics by channel table
+table Landing_Page_Channel_Metrics
+	lineageTag: landing-metrics-001
+
+	/// Returns the metric value for Landing Page filtered data
+	measure 'Landing Page Metric Value' =
+			VAR SelectedMetric = SELECTEDVALUE(Landing_Page_Channel_Metrics[Metric])
+			VAR LandingFilter = Fact_Press_Analytics[Page_Type] = "Landing Page"
+			RETURN
+			SWITCH(
+				SelectedMetric,
+				"Total Views", CALCULATE([Total Views], LandingFilter),
+				"Total Users", CALCULATE([Total Users], LandingFilter),
+				"Organic", CALCULATE([Organic Search Views], LandingFilter),
+				"Direct", CALCULATE([Direct Views], LandingFilter),
+				"Referral", CALCULATE([Referral Views], LandingFilter),
+				"Social", CALCULATE([Social Views], LandingFilter),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 03 - Distribution
+			lineageTag: landing-metrics-value
+		lineageTag: f4eb21a2-1dbc-4281-839f-950f13844627
+
+	column Metric
+		lineageTag: fd7d9588-2c74-4155-958b-deffadcd1b1a
+		isNameInferred
+		sourceColumn: [Metric]
+
+	partition Landing_Page_Channel_Metrics = calculated
+		mode: import
+		source =
+				DATATABLE(
+					"Metric", STRING,
+					{
+						{"Total Views"},
+						{"Total Users"},
+						{"Organic"},
+						{"Direct"},
+						{"Referral"},
+						{"Social"}
+					}
+				)
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- HHS Press Room Dashboard - Channels Page Background -->
+  <!-- Subtle shadows, lighter blue background, darker blue header, card layout -->
+  
+  <defs>
+    <!-- Subtle shadow filters (reduced opacity) -->
+    <filter id="shadow-subtle-1" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.08" intercept="0"/>
+      </feComponentTransfer>
+      <feOffset dx="0" dy="1"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow-subtle-2" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.06" intercept="0"/>
+      </feComponentTransfer>
+      <feOffset dx="0" dy="2"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Subtle blue gradient for background -->
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F0F4F8"/>
+      <stop offset="100%" stop-color="#F6F8FB"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Base background with subtle blue tint -->
+  <rect width="1280" height="720" fill="url(#bg-gradient)"/>
+  
+  <!-- Left sidebar area (subtle) -->
+  <rect x="196" y="24" width="88" height="672" fill="#F8F9FA" opacity="0.5"/>
+  
+  <!-- Header bar (darker blue) -->
+  <rect x="28" y="24" width="1224" height="67" fill="#1A4480" rx="4"/>
+  
+  <!-- Card elements with subtle shadows - Channels page layout -->
+  <!-- Top: Channel filter cards -->
+  <g filter="url(#shadow-subtle-1)">
+    <rect x="213" y="106" width="200" height="90" fill="#FFFFFF" rx="6"/>
+  </g>
+  <g filter="url(#shadow-subtle-1)">
+    <rect x="427" y="106" width="200" height="90" fill="#FFFFFF" rx="6"/>
+  </g>
+  <g filter="url(#shadow-subtle-1)">
+    <rect x="641" y="106" width="200" height="90" fill="#FFFFFF" rx="6"/>
+  </g>
+  <g filter="url(#shadow-subtle-1)">
+    <rect x="855" y="106" width="200" height="90" fill="#FFFFFF" rx="6"/>
+  </g>
+  <g filter="url(#shadow-subtle-1)">
+    <rect x="1069" y="106" width="183" height="90" fill="#FFFFFF" rx="6"/>
+  </g>
+  
+  <!-- Main: Large chart area -->
+  <g filter="url(#shadow-subtle-2)">
+    <rect x="213" y="210" width="1039" height="460" fill="#FFFFFF" rx="6"/>
+  </g>
+</svg>

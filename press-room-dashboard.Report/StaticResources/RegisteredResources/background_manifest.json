@@ -1,0 +1,36 @@
+{
+  "generated_at": "2024-12-29",
+  "canvas_size": "1280×720",
+  "files": [
+    {
+      "page": "home",
+      "filename": "background_home.svg",
+      "path": "press-room-dashboard.Report\\StaticResources\\RegisteredResources\\background_home.svg",
+      "size_kb": 5.5107421875
+    },
+    {
+      "page": "releases",
+      "filename": "background_releases.svg",
+      "path": "press-room-dashboard.Report\\StaticResources\\RegisteredResources\\background_releases.svg",
+      "size_kb": 4.1572265625
+    },
+    {
+      "page": "channels",
+      "filename": "background_channels.svg",
+      "path": "press-room-dashboard.Report\\StaticResources\\RegisteredResources\\background_channels.svg",
+      "size_kb": 4.29296875
+    },
+    {
+      "page": "landing",
+      "filename": "background_landing.svg",
+      "path": "press-room-dashboard.Report\\StaticResources\\RegisteredResources\\background_landing.svg",
+      "size_kb": 4.1318359375
+    },
+    {
+      "page": "release_detail",
+      "filename": "background_release_detail.svg",
+      "path": "press-room-dashboard.Report\\StaticResources\\RegisteredResources\\background_release_detail.svg",
+      "size_kb": 4.1494140625
+    }
+  ]
+}

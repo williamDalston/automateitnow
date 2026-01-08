@@ -1,0 +1,45 @@
+/// Helper table for Landing Page vs Press Releases breakdown pie chart
+table Traffic_Breakdown_Categories
+	lineageTag: traffic-breakdown-001
+
+	/// Dynamic measure that returns the views value for each category
+	measure 'Category Views' =
+			VAR SelectedCategory = SELECTEDVALUE(Traffic_Breakdown_Categories[Category])
+			RETURN
+			SWITCH(
+				SelectedCategory,
+				"Landing Page", [Landing Page Views],
+				"Top 10 Releases", [Top 10 Press Release Views],
+				"Other Releases", [Remaining Press Release Views],
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 03 - Distribution
+			lineageTag: traffic-breakdown-catviews
+		lineageTag: f53bde63-cb62-4964-b96e-46fbc35208de
+
+	column Category
+		lineageTag: b369b006-80d4-4b76-8102-59cb8b490e84
+		isNameInferred
+		sourceColumn: [Category]
+
+	column 'Sort Order'
+		lineageTag: 98b6508d-f3f3-4001-bc91-b21f4e39fb9b
+		isNameInferred
+		sourceColumn: [Sort Order]
+
+	partition Traffic_Breakdown_Categories = calculated
+		mode: import
+		source =
+				DATATABLE(
+					"Category", STRING,
+					"Sort Order", INTEGER,
+					{
+						{"Landing Page", 1},
+						{"Top 10 Releases", 2},
+						{"Other Releases", 3}
+					}
+				)
+
+	annotation PBI_ResultType = Table
+

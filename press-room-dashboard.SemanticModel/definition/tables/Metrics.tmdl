@@ -1,0 +1,1881 @@
+/// Calculation table containing 112 DAX measures organized into folders: Parameters (00), Core KPIs (01), Engagement (02), Distribution (03), Channels (04), Time Intelligence (05), Ranking (06), KPI Indicators (07), Data Quality (08), Cumulative (09), Performance Context (10), Day Analysis (11), and Summary (12). All measures include descriptions.
+table Metrics
+	lineageTag: pr-metrics-001
+
+	/// Total number of page views across all press room pages. Includes both landing pages and press releases.
+	measure 'Total Views' = SUM(Fact_Press_Analytics[Views])
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-totalviews
+
+	/// Total number of unique users who visited the press room pages.
+	measure 'Total Users' = SUM(Fact_Press_Analytics[Users])
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-totalusers
+
+		annotation PBI_FormatHint = {"isDecimal":true}
+
+	/// Total number of user sessions on press room pages.
+	measure 'Total Sessions' = SUM(Fact_Press_Analytics[Sessions])
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-totalsessions
+
+	/// Total page views for the press room landing page.
+	measure 'Landing Page Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Page_Type] = "Landing Page")
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-landingviews
+
+	/// Total page views for all press release pages.
+	measure 'Press Release Views' = ```
+			
+			SUM(PressRelease_Summary[Total Views])
+			
+			```
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-releaseviews
+
+	/// Count of distinct press releases in the dataset.
+	measure '# Press Releases' = CALCULATE(DISTINCTCOUNT(Fact_Press_Analytics[Page_URL]), Fact_Press_Analytics[Page_Type] = "Press Release")
+		formatString: #,0
+		displayFolder: 01 - Core KPIs
+		lineageTag: pr-m-releasecount
+
+	/// Average time users spent on press room pages, in seconds. NOTE: Currently returns 0 as GA4 export does not include engagement time metrics. Placeholder for future data integration.
+	measure 'Avg Time on Page' = 0
+		formatString: 0.0
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-avgtime
+
+	/// Average bounce rate percentage for press room pages. NOTE: Currently returns 0 as GA4 export does not include bounce rate metrics. Placeholder for future data integration.
+	measure 'Avg Bounce Rate' = 0
+		formatString: 0.0%
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-bouncerate
+
+	/// Total number of page entrances (first page in a session). NOTE: Currently returns 0 as GA4 export does not include entrance metrics. Placeholder for future data integration.
+	measure 'Total Entrances' = 0
+		formatString: #,0
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-entrances
+
+	/// Total number of page exits (last page in a session). NOTE: Currently returns 0 as GA4 export does not include exit metrics. Placeholder for future data integration.
+	measure 'Total Exits' = 0
+		formatString: #,0
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-exits
+
+	/// Count of new users (first-time visitors) to press room pages. NOTE: GA4 export does not distinguish new vs returning users - this currently equals Total Users. Placeholder for future enhanced data.
+	measure 'New Users' = SUM(Fact_Press_Analytics[Users])
+		formatString: #,0
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-newusers
+
+	/// Percentage of users who are new (first-time visitors). NOTE: GA4 export does not distinguish new vs returning users - this will always show 100%. Placeholder for future enhanced data.
+	measure 'New User Rate' = DIVIDE([New Users], [Total Users], 0)
+		formatString: 0.0%
+		isHidden
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-newuserrate
+
+	/// Average number of page views per unique user.
+	measure 'Views per User' = DIVIDE([Total Views], [Total Users], 0)
+		formatString: 0.0
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-viewsperuser
+
+	/// Average number of sessions per unique user.
+	measure 'Sessions per User' = DIVIDE([Total Sessions], [Total Users], 0)
+		formatString: 0.0
+		displayFolder: 02 - Engagement
+		lineageTag: pr-m-sessionsperuser
+
+	/// Percentage of total views that are landing page views.
+	measure 'Landing Page Share %' = DIVIDE([Landing Page Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-landingshare
+
+	/// Percentage of total views that are press release views.
+	measure 'Press Release Share %' = DIVIDE([Press Release Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-releaseshare
+
+	/// Average number of views per press release.
+	measure 'Avg Views per Release' = DIVIDE([Press Release Views], [# Press Releases], 0)
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-avgviewsperrelease
+
+	/// Percentage of total views for the current context.
+	measure '% of Total Views' = DIVIDE([Total Views], CALCULATE([Total Views], REMOVEFILTERS()), 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-pctoftotalviews
+
+	/// Percentage of parent category views.
+	measure '% of Parent Views' = DIVIDE([Total Views], CALCULATE([Total Views], REMOVEFILTERS(Fact_Press_Analytics[Page_URL])), 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-pctofparentviews
+
+	/// Total page views from organic search traffic.
+	measure 'Organic Search Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Channel_Group] = "Organic Search")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-organicviews
+
+	/// Total page views from direct traffic (no referrer).
+	measure 'Direct Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Channel_Group] = "Direct")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-directviews
+
+	/// Total page views from referral traffic (external websites).
+	measure 'Referral Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Channel_Group] = "Referral")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-referralviews
+
+	/// Total page views from social media traffic.
+	measure 'Social Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Channel_Group] IN {"Organic Social", "Social"})
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-socialviews
+
+	/// Total page views from email campaigns.
+	measure 'Email Views' = CALCULATE(SUM(Fact_Press_Analytics[Views]), Fact_Press_Analytics[Channel_Group] = "Email")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-emailviews
+
+	/// Percentage of total views from organic search.
+	measure 'Organic Search %' = DIVIDE([Organic Search Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-organicpct
+
+	/// Percentage of total views from direct traffic.
+	measure 'Direct %' = DIVIDE([Direct Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-directpct
+
+	/// Percentage of total views from referral traffic.
+	measure 'Referral %' = DIVIDE([Referral Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-referralpct
+
+	/// Percentage of total views from social media.
+	measure 'Social %' = DIVIDE([Social Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-socialpct
+
+	/// Percentage of total views from email campaigns.
+	measure 'Email %' = DIVIDE([Email Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-emailpct
+
+	/// Year-to-date total page views from the start of the current year.
+	measure 'Views YTD' = CALCULATE([Total Views], DATESYTD(Dim_Date[Date]))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsytd
+
+	/// Same period last year - total page views for the equivalent period in the previous year.
+	measure 'Views SPLY' = CALCULATE([Total Views], SAMEPERIODLASTYEAR(Dim_Date[Date]))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsyoy
+
+	/// Year-over-year percentage change in page views compared to the same period last year.
+	measure 'Views YoY %' =
+			VAR CurrentPeriod = [Total Views]
+			VAR PriorPeriod = [Views SPLY]
+			RETURN
+			DIVIDE(CurrentPeriod - PriorPeriod, PriorPeriod, BLANK())
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsyoypct
+
+	/// Month-to-date total page views from the start of the current month.
+	measure 'Views MTD' = CALCULATE([Total Views], DATESMTD(Dim_Date[Date]))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsmtd
+
+	/// Previous month total page views.
+	measure 'Views PM' = CALCULATE([Total Views], DATEADD(Dim_Date[Date], -1, MONTH))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewspm
+
+	/// Month-over-month percentage change in page views.
+	measure 'Views MoM %' =
+			VAR CurrentPeriod = [Total Views]
+			VAR PriorPeriod = [Views PM]
+			RETURN
+			DIVIDE(CurrentPeriod - PriorPeriod, PriorPeriod, BLANK())
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsmompct
+
+	/// Cumulative running total respecting filter context (uses ALLSELECTED). Responds to slicers and report filters.
+	measure 'Running Total Views' =
+			CALCULATE(
+			    [Total Views],
+			    FILTER(
+			        ALLSELECTED(Dim_Date[Date]),
+			        Dim_Date[Date] <= MAX(Dim_Date[Date])
+			    )
+			)
+		formatString: #,0
+		displayFolder: 09 - Cumulative
+		lineageTag: pr-m-runningtotalviews
+
+	/// 7-day moving average of daily page views.
+	measure 'Views 7-Day Avg' =
+			AVERAGEX(
+			    DATESINPERIOD(Dim_Date[Date], MAX(Dim_Date[Date]), -7, DAY),
+			    CALCULATE([Total Views])
+			)
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-views7dayavg
+
+	/// 30-day moving average of daily page views.
+	measure 'Views 30-Day Avg' =
+			AVERAGEX(
+			    DATESINPERIOD(Dim_Date[Date], MAX(Dim_Date[Date]), -30, DAY),
+			    CALCULATE([Total Views])
+			)
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-views30dayavg
+
+	/// Ranking of pages by total views (1 = highest views).
+	measure 'View Rank' = RANKX(ALL(Fact_Press_Analytics[Page_URL]), CALCULATE(SUM(Fact_Press_Analytics[Views])), , DESC, DENSE)
+		formatString: 0
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-viewrank
+
+	/// Boolean indicator (1 or 0) if the page is in the top 10 by views.
+	measure 'Is Top 10' = IF([View Rank] <= 10, "Yes", "No")
+		isHidden
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-istop10
+
+	/// Boolean indicator (1 or 0) if the page is in the top 5 by views.
+	measure 'Is Top 5' = IF([View Rank] <= 5, "Yes", "No")
+		isHidden
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-istop5
+
+	/// Title of the press release with the highest views.
+	measure 'Top Press Release' =
+			VAR TopPage =
+			    TOPN(
+			        1,
+			        CALCULATETABLE(
+			            SUMMARIZE(
+			                FILTER(
+			                    Fact_Press_Analytics,
+			                    Fact_Press_Analytics[Page_Type] = "Press Release" &&
+			                    Fact_Press_Analytics[Page_URL] IN VALUES(Dim_Press_Releases[Page_URL])
+			                ),
+			                Fact_Press_Analytics[Page_Title],
+			                "TotalViews", SUM(Fact_Press_Analytics[Views])
+			            ),
+			            Fact_Press_Analytics[Page_Type] = "Press Release",
+			            Fact_Press_Analytics[Page_URL] IN VALUES(Dim_Press_Releases[Page_URL])
+			        ),
+			        [TotalViews],
+			        DESC
+			    )
+			RETURN
+			MAXX(TopPage, Fact_Press_Analytics[Page_Title])
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-toppressrelease
+
+	/// Total views for the highest-performing press release.
+	measure 'Top Release Views' =
+			VAR TopViews =
+			    MAXX(
+			        CALCULATETABLE(
+			            SUMMARIZE(
+			                FILTER(
+			                    Fact_Press_Analytics,
+			                    Fact_Press_Analytics[Page_Type] = "Press Release" &&
+			                    Fact_Press_Analytics[Page_URL] IN VALUES(Dim_Press_Releases[Page_URL])
+			                ),
+			                Fact_Press_Analytics[Page_URL],
+			                "TotalViews", SUM(Fact_Press_Analytics[Views])
+			            ),
+			            Fact_Press_Analytics[Page_Type] = "Press Release",
+			            Fact_Press_Analytics[Page_URL] IN VALUES(Dim_Press_Releases[Page_URL])
+			        ),
+			        [TotalViews]
+			    )
+			RETURN TopViews
+		formatString: #,0
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-toppressreleaseviews
+
+	/// Ranking of channels by total views (1 = highest views).
+	measure 'Channel Rank' = RANKX(ALL(Fact_Press_Analytics[Channel_Group]), CALCULATE([Total Views]), , DESC, DENSE)
+		formatString: 0
+		displayFolder: 06 - Ranking
+		lineageTag: pr-m-channelrank
+
+	/// Indicator value for year-over-year comparison visualization.
+	measure 'YoY Indicator' =
+			VAR Change = [Views YoY %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, 1,
+			    Change < -0.05, -1,
+			    0
+			)
+		formatString: 0
+		isHidden
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-yoyindicator
+
+	/// Indicator value for month-over-month comparison visualization.
+	measure 'MoM Indicator' =
+			VAR Change = [Views MoM %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, 1,
+			    Change < -0.05, -1,
+			    0
+			)
+		formatString: 0
+		isHidden
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-momindicator
+
+	/// Arrow direction indicator for year-over-year trend (up/down/neutral).
+	measure 'YoY Arrow' =
+			VAR Change = [Views YoY %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, "▲",
+			    Change < -0.05, "▼",
+			    "●"
+			)
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-yoyarrow
+
+	/// Color indicator for year-over-year performance (green/red/neutral).
+	measure 'YoY Color' =
+			VAR Change = [Views YoY %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, "#2E8540",
+			    Change < -0.05, "#D54309",
+			    "#71767A"
+			)
+		isHidden
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-yoycolor
+
+	/// Total number of data rows in the press room dataset.
+	measure 'Row Count' = COUNTROWS(Fact_Press_Analytics)
+		formatString: #,0
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-rowcount
+
+	/// Count of distinct page paths in the dataset.
+	measure '# Distinct Pages' = DISTINCTCOUNT(Fact_Press_Analytics[Page_URL])
+		formatString: #,0
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-distinctpages
+
+	/// Count of distinct traffic channels in the dataset.
+	measure '# Channels' = DISTINCTCOUNT(Fact_Press_Analytics[Channel_Group])
+		formatString: #,0
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-distinctchannels
+
+	/// Earliest date in the dataset.
+	measure 'Data Start Date' = MIN(Fact_Press_Analytics[Date])
+		formatString: Short Date
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-datastartdate
+
+	/// Latest date in the dataset.
+	measure 'Data End Date' = MAX(Fact_Press_Analytics[Date])
+		formatString: Short Date
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-dataenddate
+
+	/// Formatted date range string for display (e.g., 'March 11 2025 - December 15 2025').
+	measure 'Date Range Label' = "Data: " & FORMAT([Data Start Date], "MMM D, YYYY") & " – " & FORMAT([Data End Date], "MMM D, YYYY")
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-daterangelabel
+
+	/// Total views for the top 10 press releases by views.
+	measure 'Top 10 Press Release Views' =
+			VAR Top10Pages =
+			    TOPN(
+			        10,
+			        SUMMARIZE(
+			            FILTER(
+			                Fact_Press_Analytics,
+			                Fact_Press_Analytics[Page_Type] = "Press Release"
+			            ),
+			            Fact_Press_Analytics[Page_URL],
+			            "TotalViews", SUM(Fact_Press_Analytics[Views])
+			        ),
+			        [TotalViews],
+			        DESC
+			    )
+			RETURN
+			SUMX(Top10Pages, [TotalViews])
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-top10releaseviews
+
+	/// Percentage of press release traffic from top 10 releases.
+	measure 'Top 10 % of Press Release Traffic' = DIVIDE([Top 10 Press Release Views], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-top10pct
+
+	/// Total views for press releases not in the top 10.
+	measure 'Remaining Press Release Views' = [Press Release Views] - [Top 10 Press Release Views]
+		formatString: #,0
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-remainingreleaseviews
+
+	/// Percentage of press release traffic from releases outside top 10.
+	measure 'Remaining Press Release %' = DIVIDE([Remaining Press Release Views], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 03 - Distribution
+		lineageTag: pr-m-remainingpct
+
+	/// Organic search views for press release pages only.
+	measure 'Organic Search Views (Press Releases Only)' =
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Channel_Group] = "Organic Search",
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-organicviewspr
+
+	/// Direct traffic views for press release pages only.
+	measure 'Direct Views (Press Releases Only)' =
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Channel_Group] = "Direct",
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-directviewspr
+
+	/// Referral traffic views for press release pages only.
+	measure 'Referral Views (Press Releases Only)' =
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Channel_Group] = "Referral",
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-referralviewspr
+
+	/// Social media views for press release pages only.
+	measure 'Social Views (Press Releases Only)' =
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Channel_Group] = "Organic Social",
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-socialviewspr
+
+	/// Email campaign views for press release pages only.
+	measure 'Email Views (Press Releases Only)' =
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Channel_Group] = "Email",
+			    Fact_Press_Analytics[Page_Type] = "Press Release",
+			    Fact_Press_Analytics[Page_URL] IN VALUES(Dim_Press_Releases[Page_URL])
+			)
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-emailviewspr
+
+	/// Percentage of press release views from organic search.
+	measure 'Organic Search % (Press Releases Only)' = DIVIDE([Organic Search Views (Press Releases Only)], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-organicpctpr
+
+	/// Percentage of press release views from direct traffic.
+	measure 'Direct % (Press Releases Only)' = DIVIDE([Direct Views (Press Releases Only)], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-directpctpr
+
+	/// Percentage of press release views from referral traffic.
+	measure 'Referral % (Press Releases Only)' = DIVIDE([Referral Views (Press Releases Only)], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-referralpctpr
+
+	/// Percentage of press release views from social media.
+	measure 'Social % (Press Releases Only)' = DIVIDE([Social Views (Press Releases Only)], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-socialpctpr
+
+	/// Percentage of press release views from email campaigns.
+	measure 'Email % (Press Releases Only)' = DIVIDE([Email Views (Press Releases Only)], [Press Release Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-emailpctpr
+
+	/// Total page views for the current week (Sunday through Saturday).
+	measure 'Views This Week' =
+			VAR MaxDate = MAX(Dim_Date[Date])
+			VAR WeekStart = MaxDate - WEEKDAY(MaxDate, 2) + 1
+			RETURN
+			CALCULATE(
+			    [Total Views],
+			    Dim_Date[Date] >= WeekStart && Dim_Date[Date] <= MaxDate
+			)
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewsthisweek
+
+	/// Total page views for the previous week (Sunday through Saturday).
+	measure 'Views Last Week' =
+			VAR MaxDate = MAX(Dim_Date[Date])
+			VAR LastWeekEnd = MaxDate - WEEKDAY(MaxDate, 2)
+			VAR LastWeekStart = LastWeekEnd - 6
+			RETURN
+			CALCULATE(
+			    [Total Views],
+			    Dim_Date[Date] >= LastWeekStart && Dim_Date[Date] <= LastWeekEnd
+			)
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewslastweek
+
+	/// Week-over-week percentage change in page views.
+	measure 'Views WoW %' =
+			VAR CurrentWeek = [Views This Week]
+			VAR PriorWeek = [Views Last Week]
+			RETURN
+			DIVIDE(CurrentWeek - PriorWeek, PriorWeek, BLANK())
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-viewswowpct
+
+	/// Year-to-date total unique users from the start of the current year.
+	measure 'Users YTD' = CALCULATE([Total Users], DATESYTD(Dim_Date[Date]))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-usersytd
+
+	/// Year-to-date total sessions from the start of the current year.
+	measure 'Sessions YTD' = CALCULATE([Total Sessions], DATESYTD(Dim_Date[Date]))
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-sessionsytd
+
+	/// Year-to-date count of press releases.
+	measure 'Press Releases YTD' =
+			CALCULATE(
+			    [# Press Releases],
+			    DATESYTD(Dim_Date[Date])
+			)
+		formatString: #,0
+		displayFolder: 05 - Time Intelligence
+		lineageTag: pr-m-releasesytd
+
+	/// Formatted label for the current reporting week.
+	measure 'Report Week Label' =
+			VAR MaxDate = MAX(Dim_Date[Date])
+			VAR WeekStart = MaxDate - WEEKDAY(MaxDate, 2) + 1
+			RETURN
+			"Week of " & FORMAT(WeekStart, "MMM D") & " - " & FORMAT(MaxDate, "MMM D, YYYY")
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-reportweeklabel
+
+	/// Formatted label for year-to-date period.
+	measure 'YTD Label' = "Year-to-Date: Jan 1 - " & FORMAT(MAX(Dim_Date[Date]), "MMM D, YYYY")
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-ytdlabel
+
+	/// Arrow direction indicator for week-over-week trend (up/down/neutral).
+	measure 'WoW Arrow' =
+			VAR Change = [Views WoW %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, "▲",
+			    Change < -0.05, "▼",
+			    "●"
+			)
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-wowarrow
+
+	/// Color indicator for week-over-week performance (green/red/neutral).
+	measure 'WoW Color' =
+			VAR Change = [Views WoW %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, "#2E8540",
+			    Change < -0.05, "#D54309",
+			    "#71767A"
+			)
+		isHidden
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-wowcolor
+
+	/// Views measure with embedded trend indicator.
+	measure 'Views with Trend' =
+			VAR CurrentViews = [Total Views]
+			VAR Change = [Views WoW %]
+			VAR Arrow = [WoW Arrow]
+			VAR ChangeText = IF(NOT ISBLANK(Change), FORMAT(Change, "+0.0%;-0.0%;0.0%"), "")
+			RETURN
+			FORMAT(CurrentViews, "#,0") & " " & Arrow & " " & ChangeText
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-viewswithtrend
+
+	/// Users measure with embedded trend indicator.
+	measure 'Users with Trend' =
+			VAR CurrentUsers = [Total Users]
+			VAR PriorUsers = CALCULATE([Total Users], DATEADD(Dim_Date[Date], -7, DAY))
+			VAR Change = DIVIDE(CurrentUsers - PriorUsers, PriorUsers, BLANK())
+			VAR Arrow = SWITCH(TRUE(), Change > 0.05, "▲", Change < -0.05, "▼", "●")
+			VAR ChangeText = IF(NOT ISBLANK(Change), FORMAT(Change, "+0.0%;-0.0%;0.0%"), "")
+			RETURN
+			FORMAT(CurrentUsers, "#,0") & " " & Arrow & " " & ChangeText
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-userswithtrend
+
+	/// Color coding for trend icons (positive/negative/neutral).
+	measure 'Trend Icon Color' =
+			VAR Change = [Views WoW %]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    Change > 0.05, "#2E8540",
+			    Change < -0.05, "#D54309",
+			    "#71767A"
+			)
+		displayFolder: 07 - KPI Indicators
+		lineageTag: pr-m-trendiconcolor
+
+	/// Cumulative running total of page views from the start of the data period.
+	measure 'Views Running Total' =
+			CALCULATE(
+			    [Total Views],
+			    FILTER(
+			        ALL(Dim_Date[Date]),
+			        Dim_Date[Date] <= MAX(Dim_Date[Date])
+			    )
+			)
+		formatString: #,0
+		displayFolder: 09 - Cumulative
+		lineageTag: pr-m-viewsrunningtotal
+
+	/// Cumulative year-to-date total of page views.
+	measure 'Views Cumulative YTD' =
+			CALCULATE(
+			    [Total Views],
+			    DATESYTD(Dim_Date[Date])
+			)
+		formatString: #,0
+		displayFolder: 09 - Cumulative
+		lineageTag: pr-m-viewscumulativeytd
+
+	/// Cumulative year-to-date total of unique users.
+	measure 'Users Cumulative YTD' =
+			CALCULATE(
+			    [Total Users],
+			    DATESYTD(Dim_Date[Date])
+			)
+		formatString: #,0
+		displayFolder: 09 - Cumulative
+		lineageTag: pr-m-userscumulativeytd
+
+	/// Average daily page views across the data period.
+	measure 'Daily Average Views' =
+			AVERAGEX(
+			    VALUES(Dim_Date[Date]),
+			    CALCULATE([Total Views])
+			)
+		formatString: #,0
+		displayFolder: 09 - Cumulative
+		lineageTag: pr-m-dailyaverageviews
+
+	/// Highest single-day page views in the dataset.
+	measure 'Best Day Views' =
+			MAXX(
+			    VALUES(Dim_Date[Date]),
+			    CALCULATE([Total Views])
+			)
+		formatString: #,0
+		displayFolder: 10 - Performance Context
+		lineageTag: pr-m-bestdayviews
+
+	/// Date of the day with the highest page views.
+	measure 'Best Day Date' =
+			VAR MaxViews = [Best Day Views]
+			RETURN
+			MAXX(
+			    FILTER(
+			        VALUES(Dim_Date[Date]),
+			        CALCULATE([Total Views]) = MaxViews
+			    ),
+			    Dim_Date[Date]
+			)
+		formatString: mmm d, yyyy
+		displayFolder: 10 - Performance Context
+		lineageTag: pr-m-bestdaydate
+
+	/// Number of days since the peak views day.
+	measure 'Days Since Peak' =
+			VAR PeakDate = [Best Day Date]
+			VAR LastDate = MAX(Dim_Date[Date])
+			RETURN
+			IF(
+			    NOT ISBLANK(PeakDate) && NOT ISBLANK(LastDate),
+			    DATEDIFF(PeakDate, LastDate, DAY),
+			    BLANK()
+			)
+		formatString: 0 "days ago"
+		displayFolder: 10 - Performance Context
+		lineageTag: pr-m-dayssincepeak
+
+	/// Count of days with non-zero page views.
+	measure 'Active Data Days' =
+			COUNTROWS(
+			    FILTER(
+			        VALUES(Dim_Date[Date]),
+			        CALCULATE([Total Views]) > 0
+			    )
+			)
+		formatString: 0
+		displayFolder: 10 - Performance Context
+		lineageTag: pr-m-activedatadays
+
+	/// Text note describing data coverage and quality.
+	measure 'Data Coverage Note' = "⚠️ Data available from " & FORMAT([Data Start Date], "MMM D, YYYY") & ". Prior data not in source."
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-datacoveragenote
+
+	/// Total number of days with data in the dataset.
+	measure 'Days of Data' = DATEDIFF([Data Start Date], [Data End Date], DAY) + 1
+		formatString: 0
+		displayFolder: 08 - Data Quality
+		lineageTag: pr-m-daysofdata
+
+	/// Day of the week with the highest average views (Monday, Tuesday, etc.).
+	measure 'Best Day of Week' =
+			VAR DayStats =
+			    ADDCOLUMNS(
+			        VALUES(Dim_Date[Day_Of_Week]),
+			        "DayViews", CALCULATE([Total Views])
+			    )
+			VAR MaxDay = MAXX(DayStats, [DayViews])
+			RETURN
+			MAXX(FILTER(DayStats, [DayViews] = MaxDay), Dim_Date[Day_Of_Week])
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-bestdayofweek
+
+	/// Total page views on Mondays.
+	measure 'Monday Views' = CALCULATE([Total Views], Dim_Date[Day_Of_Week] = "Monday")
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-mondayviews
+
+	/// Total page views on Tuesdays.
+	measure 'Tuesday Views' = CALCULATE([Total Views], Dim_Date[Day_Of_Week] = "Tuesday")
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-tuesdayviews
+
+	/// Total page views on Wednesdays.
+	measure 'Wednesday Views' = CALCULATE([Total Views], Dim_Date[Day_Of_Week] = "Wednesday")
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-wednesdayviews
+
+	/// Total page views on Thursdays.
+	measure 'Thursday Views' = CALCULATE([Total Views], Dim_Date[Day_Of_Week] = "Thursday")
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-thursdayviews
+
+	/// Total page views on Fridays.
+	measure 'Friday Views' = CALCULATE([Total Views], Dim_Date[Day_Of_Week] = "Friday")
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-fridayviews
+
+	/// Total page views on Saturdays and Sundays.
+	measure 'Weekend Views' =
+			CALCULATE([Total Views],
+			    Dim_Date[Day_Of_Week] IN {"Saturday", "Sunday"})
+		formatString: #,0
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-weekendviews
+
+	/// Percentage breakdown of weekday vs weekend views.
+	measure 'Weekday vs Weekend %' =
+			VAR WeekdayViews = [Total Views] - [Weekend Views]
+			RETURN
+			DIVIDE(WeekdayViews, [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 11 - Day Analysis
+		lineageTag: pr-m-weekdayweekendpct
+
+	/// Summary text describing overall press room performance metrics.
+	measure 'Performance Summary' =
+			VAR Views = FORMAT([Total Views], "#,##0")
+			VAR Change = [Views WoW %]
+			VAR Arrow = [WoW Arrow]
+			VAR ChangeText = IF(NOT ISBLANK(Change), FORMAT(Change, "+0.0%;-0.0%;0.0%"), "-")
+			RETURN
+			Views & " views " & Arrow & " " & ChangeText & " WoW"
+		displayFolder: 12 - Summary
+		lineageTag: pr-m-performancesummary
+
+	/// Summary text describing the top performing traffic channel.
+	measure 'Top Channel Summary' =
+			VAR MaxChannel =
+			    MAXX(
+			        ADDCOLUMNS(
+			            VALUES(Fact_Press_Analytics[Channel_Group]),
+			            "ChannelViews", CALCULATE([Total Views])
+			        ),
+			        [ChannelViews]
+			    )
+			VAR TopChannel =
+			    MAXX(
+			        FILTER(
+			            ADDCOLUMNS(
+			                VALUES(Fact_Press_Analytics[Channel_Group]),
+			                "ChannelViews", CALCULATE([Total Views])
+			            ),
+			            [ChannelViews] = MaxChannel
+			        ),
+			        Fact_Press_Analytics[Channel_Group]
+			    )
+			VAR Pct = DIVIDE(MaxChannel, [Total Views], 0)
+			RETURN
+			TopChannel & " (" & FORMAT(Pct, "0%") & " of traffic)"
+		displayFolder: 12 - Summary
+		lineageTag: pr-m-topchannelsummary
+
+	/// Total unique users from organic search traffic.
+	measure 'Organic Search Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Channel_Group] = "Organic Search")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-organicusers
+
+	/// Total unique users from direct traffic.
+	measure 'Direct Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Channel_Group] = "Direct")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-directusers
+
+	/// Total unique users from referral traffic.
+	measure 'Referral Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Channel_Group] = "Referral")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-referralusers
+
+	/// Total unique users from social media traffic.
+	measure 'Social Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Channel_Group] IN {"Organic Social", "Social"})
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-socialusers
+
+	/// Total unique users from email campaigns.
+	measure 'Email Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Channel_Group] = "Email")
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-emailusers
+
+	/// Total page views from channels not categorized as Organic, Direct, Referral, Social, or Email.
+	measure 'Other Channel Views' = [Total Views] - [Direct Views] - [Organic Search Views] - [Referral Views] - [Social Views] - [Email Views]
+		formatString: #,0
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-otherviews
+
+	/// Percentage of total views from other/uncategorized channels.
+	measure 'Other Channel %' = DIVIDE([Other Channel Views], [Total Views], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Channels
+		lineageTag: pr-m-otherpct
+
+	/// Dynamic measure selected by the Metric Selector parameter. Allows users to switch between different metrics in visuals.
+	measure 'Selected Metric' =
+			SWITCH(
+			    SELECTEDVALUE('Metric Selector'[Metric Order], 1),
+			    1, [Total Views],
+			    2, [Total Users],
+			    3, [Total Sessions],
+			    4, [# Press Releases],
+			    [Total Views]
+			)
+		formatString: #,0
+		displayFolder: 00 - Parameters
+		lineageTag: pr-param-selectedmetric
+
+	/// Name of the currently selected metric from the Metric Selector parameter.
+	measure 'Selected Metric Name' = SELECTEDVALUE('Metric Selector'[Metric], "Views")
+		displayFolder: 00 - Parameters
+		lineageTag: pr-param-selectedname
+
+	/// Formatted chart title using the selected metric name from the Metric Selector parameter.
+	measure 'Chart Title - Selected Metric' = "Top 10 Press Releases by " & [Selected Metric Name]
+		displayFolder: 00 - Parameters
+		lineageTag: pr-param-charttitle
+
+	/// Total views filtered by the selected channel from the Channel Selector parameter. Uses Fact_Press_Analytics[Channel_Group] for channel filtering.
+	measure 'Channel Filtered Views' =
+			VAR SelectedChannel = SELECTEDVALUE('Channel Selector'[Channel], "All Channels")
+			RETURN
+			IF(
+			    SelectedChannel = "All Channels",
+			    [Total Views],
+			    CALCULATE(
+			        [Total Views],
+			        Fact_Press_Analytics[Channel_Group] = SelectedChannel
+			    )
+			)
+		formatString: #,0
+		displayFolder: 00 - Parameters
+		lineageTag: pr-param-channelviews
+
+	/// Categorizes press releases by age: New (0-30 days), Recent (31-90 days), Mature (91-180 days), or Legacy (180+ days). Based on days since publication date.
+	measure 'Release Age Category' =
+			VAR DaysSince = SELECTEDVALUE(Dim_Press_Releases[Days_Since_Publication])
+			RETURN
+			IF(
+			    ISBLANK(DaysSince),
+			    "No Date",
+			    SWITCH(
+			        TRUE(),
+			        DaysSince <= 30, "New (0-30 days)",
+			        DaysSince <= 90, "Recent (31-90 days)",
+			        DaysSince <= 180, "Mature (91-180 days)",
+			        "Legacy (180+ days)"
+			    )
+			)
+		displayFolder: 03 - Distribution
+		lineageTag: 23637d8c-d760-40ec-95a7-056f8f7c7c45
+
+	/// First bullet for Executive Summary: Total views and users statement
+	measure 'Executive Summary Line 1' =
+			"The HHS.gov Press Room generated " &
+			FORMAT([Total Views], "#,##0") & " page views from " &
+			FORMAT([Total Users], "#,##0") & " users YTD."
+		displayFolder: 12 - Summary
+		lineageTag: 0fb6f2e4-32ee-4630-a55f-06b9755687ff
+
+	/// Second bullet for Executive Summary: Top 10 vs Remaining distribution statement
+	measure 'Executive Summary Line 2' = ```
+			VAR Top10 = [Top 10 Press Release Views]
+			VAR Top10Pct = [Top 10 % of Press Release Traffic]
+			VAR Remaining = [Remaining Press Release Views]
+			VAR RemainingPct = 1 - Top10Pct
+			VAR RemainingCount = [# Press Releases] - 10
+			RETURN
+			"Top 10 releases attracted " & FORMAT(Top10 / 1000, "#,##0.0") & "K views (" &
+			FORMAT(Top10Pct, "0.0%") & "), while the remaining " &
+			RemainingCount & " releases shared " & 
+			FORMAT(Remaining / 1000, "#,##0.0") & "K views (" & 
+			FORMAT(RemainingPct, "0.0%") & ")."
+			```
+		displayFolder: 12 - Summary
+		lineageTag: 137b1805-9102-4325-935b-14c5670b6fc7
+
+	/// Third bullet for Executive Summary: Channel attribution statement
+	measure 'Executive Summary Line 3' = ```
+			VAR OrgPct = [Organic Search % (Press Releases Only)]
+			VAR DirPct = [Direct % (Press Releases Only)]
+			RETURN
+			"Organic search is the primary channel (" & FORMAT(OrgPct, "0.0%") & 
+			"), followed by direct traffic (" & FORMAT(DirPct, "0.0%") & ")."
+			```
+		displayFolder: 12 - Summary
+		lineageTag: 0b95a98b-6c43-405d-b82b-38dbb1d8c212
+
+	/// Formatted date range label for dashboard header (e.g., 'YTD: Jan 1 – Dec 15, 2025')
+	measure 'Date Context Label' = ```
+			"YTD: " & FORMAT(MIN(Dim_Date[Date]), "MMM D") & " – " & 
+			FORMAT(MAX(Dim_Date[Date]), "MMM D, YYYY")
+			```
+		displayFolder: 08 - Data Quality
+		lineageTag: c1bbed9a-1427-482f-80a9-1f7b6a539504
+
+	/// Timestamp label showing when data was last refreshed
+	measure 'Last Refreshed Label' = "Last refreshed: " & FORMAT(NOW(), "YYYY-MM-DD HH:MM")
+		displayFolder: 08 - Data Quality
+		lineageTag: 29ecad38-444b-4c58-b2a3-f7c346d1d170
+
+	/// Formatted display title for press releases and landing page. Shows clean title in tables and visuals.
+	measure 'Display Title' =
+			VAR SelectedTitle = SELECTEDVALUE(Dim_Press_Releases[Page_Title])
+			VAR IsLandingPage = SELECTEDVALUE(Dim_Press_Releases[Page_Type]) = "Landing Page"
+			RETURN
+			IF(
+			    IsLandingPage,
+			    "Press Room | HHS.gov",
+			    SelectedTitle
+			)
+		displayFolder: 08 - Data Quality
+		lineageTag: 83211b4f-3357-4603-866b-c0ca465ec1fa
+
+	/// Shows data coverage indicator (e.g., 'Coverage: 162/178 (91%)'). Displays releases with data vs total releases.
+	measure 'Coverage Indicator' = ```
+			VAR TotalReleases = [# Press Releases]
+			VAR ReleasesWithData = 
+			    CALCULATE(
+			        DISTINCTCOUNT(Fact_Press_Analytics[Page_URL]),
+			        Fact_Press_Analytics[Page_Type] = "Press Release"
+			    )
+			VAR CoveragePct = DIVIDE(ReleasesWithData, TotalReleases, 1)
+			RETURN
+			"Coverage: " & ReleasesWithData & "/" & TotalReleases & 
+			" (" & FORMAT(CoveragePct, "0%") & ")"
+			```
+		displayFolder: 08 - Data Quality
+		lineageTag: 2e011116-0054-4899-b916-2caac904c668
+
+	/// Returns the top traffic channel for a specific press release. Used in release detail views and tables.
+	measure 'Top Channel (PR)' = ```
+			
+			/// Value for Top 10 vs Remaining chart. Returns views for selected series (Top 10 or Remaining).
+			measure 'Top10 Series Value' =
+					VAR SelectedSeries = SELECTEDVALUE(Top10_Series[Series])
+					RETURN
+					IF(
+						SelectedSeries = "Top 10",
+						[Top 10 Press Release Views],
+						[Remaining Press Release Views]
+					)
+				formatString: #,0
+				displayFolder: 03 - Distribution
+				lineageTag: pr-m-top10seriesvalue
+			
+			/// Year-to-date press release views. Filters to Press Release page type and calculates YTD total.
+			measure 'Press Release Views YTD' =
+			
+			/// Total unique users for press releases only (excludes landing page and other pages).
+			measure 'Press Release Users' = CALCULATE(SUM(Fact_Press_Analytics[Users]), Fact_Press_Analytics[Page_Type] = "Press Release")
+				formatString: #,0
+				displayFolder: 01 - Core KPIs
+				lineageTag: pr-m-prusers
+			
+			/// Year-to-date press release users. Filters to Press Release page type and calculates YTD total.
+			measure 'Press Release Users YTD' =
+					CALCULATE(
+						[Press Release Users],
+						DATESYTD(Dim_Date[Date])
+					)
+				formatString: #,0
+				displayFolder: 05 - Time Intelligence
+				lineageTag: pr-m-prusersytd
+					CALCULATE(
+						[Press Release Views],
+						DATESYTD(Dim_Date[Date])
+					)
+				formatString: #,0
+				displayFolder: 05 - Time Intelligence
+				lineageTag: pr-m-prviewsytd
+					VAR CurrentURL = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
+					VAR ChannelTable = 
+					    ADDCOLUMNS(
+					        VALUES(Fact_Press_Analytics[Channel_Group]),
+					        "@ChannelViews",
+					        CALCULATE(
+					            [Total Views],
+					            Fact_Press_Analytics[Page_URL] = CurrentURL
+					        )
+					    )
+					VAR TopChannel = 
+					    TOPN(
+					        1,
+					        FILTER(ChannelTable, [@ChannelViews] > 0),
+					        [@ChannelViews],
+					        DESC
+					    )
+					RETURN
+					IF(
+					    HASONEVALUE(Dim_Press_Releases[Page_URL]),
+					    MAXX(TopChannel, Fact_Press_Analytics[Channel_Group]),
+					    BLANK()
+					)
+			```
+		displayFolder: 04 - Channels
+		lineageTag: 09d46754-4b2c-4b14-ae53-8a23483f838f
+
+	measure 'Views Performance Color' =
+			VAR TotalViews = [Total Views]
+			VAR Threshold_High = 10000  // Adjust based on your data
+			VAR Threshold_Medium = 5000
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        TotalViews >= Threshold_High, "#049570",  // Green - Excellent
+			        TotalViews >= Threshold_Medium, "#FFC000",  // Yellow - Good
+			        "#E92F42"  // Red - Needs attention
+			    )
+		lineageTag: eea27a47-e480-4b26-bc5f-5701c16a05e0
+
+	measure 'YoY Change Color' =
+			VAR Change = [Views YoY %]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        Change > 0.10, "#049570",  // Green - 10%+ growth
+			        Change > 0, "#FFC000",  // Yellow - Positive but < 10%
+			        Change < -0.10, "#E92F42",  // Red - 10%+ decline
+			        "#808080"  // Gray - No change
+			    )
+		lineageTag: e3a61bfe-f069-4f6a-a975-b8ff2f3f1514
+
+	measure 'Engagement Level Color' =
+			VAR Rate = [Engagement Rate]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        Rate >= 0.60, "#049570",  // Green - High engagement
+			        Rate >= 0.40, "#FFC000",  // Yellow - Medium engagement
+			        "#E92F42"  // Red - Low engagement
+			    )
+		lineageTag: 436fc57c-261c-4685-bd80-45ed69eeb157
+
+	measure 'Performance Background Color' =
+			VAR TotalViews = [Total Views]
+			VAR Threshold_High = 10000
+			VAR Threshold_Medium = 5000
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        TotalViews >= Threshold_High, "#E6FEF8",  // Light green background
+			        TotalViews >= Threshold_Medium, "#FFF5D5",  // Light yellow background
+			        "#FDE8EA"  // Light red background
+			    )
+		lineageTag: 9962e29a-c682-4d61-a303-fde4e8a12977
+
+	measure 'YoY Background Color' =
+			VAR Change = [Views YoY %]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        Change > 0.10, "#E6FEF8",  // Light green - Good growth
+			        Change > 0, "#FFF5D5",  // Light yellow - Positive
+			        Change < -0.10, "#FDE8EA",  // Light red - Declining
+			        "#FFFFFF"  // White - Neutral
+			    )
+		lineageTag: 4f29ea96-1fab-4410-b8fe-67fcf79019af
+
+	measure 'Views Change Arrow' =
+			VAR Change = [Views YoY %]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        Change > 0, UNICHAR(9650),  // Up arrow
+			        Change < 0, UNICHAR(9660),  // Down arrow
+			        UNICHAR(9632)  // Square (no change)
+			    )
+		lineageTag: 546d6b16-ecc9-4b05-bed2-aceff95b5227
+
+	measure 'Performance Status Text' =
+			VAR TotalViews = [Total Views]
+			VAR Threshold_High = 10000
+			VAR Threshold_Medium = 5000
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        TotalViews >= Threshold_High, "Excellent",
+			        TotalViews >= Threshold_Medium, "Good",
+			        "Needs Attention"
+			    )
+		lineageTag: 08afd77e-c319-4844-8c66-c2efed8060aa
+
+	measure 'Data Quality Color' =
+			VAR CoverageRate = DIVIDE([Covered Items], [Total Items], 0)
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        CoverageRate >= 0.90, "#049570",  // Green - Excellent coverage
+			        CoverageRate >= 0.70, "#FFC000",  // Yellow - Good coverage
+			        "#E92F42"  // Red - Poor coverage
+			    )
+		lineageTag: e7404403-3a33-436e-a722-f73c30b888b4
+
+	measure 'Freshness Indicator' =
+			VAR DaysSinceUpdate = DATEDIFF(MAX(Dim_Date[Date]), TODAY(), DAY)
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        DaysSinceUpdate <= 1, "#049570",  // Green - Fresh (today/yesterday)
+			        DaysSinceUpdate <= 7, "#FFC000",  // Yellow - Recent (within week)
+			        "#E92F42"  // Red - Stale (over a week old)
+			    )
+		lineageTag: 4e9ab56d-5420-47be-9286-5b1675eba77b
+
+	/// Data coverage summary text for display (uses existing Data Start/End Date measures).
+	measure 'Data Coverage Info' =
+			"Data: " & FORMAT([Data Start Date], "MMM d, yyyy") & " to " &
+			FORMAT([Data End Date], "MMM d, yyyy")
+			formatString: @
+			displayFolder: 08 - Data Quality
+			lineageTag: pr-m-datacoverageinfo
+		lineageTag: 8a3f62e5-729f-4cae-aa8b-a48985f2b77c
+
+	/// Total views for the last 28 days.
+	measure 'Views Last 28 Days' = ```
+			
+			CALCULATE(
+			    [Press Release Views],
+			    DATESINPERIOD(
+			        Dim_Date[Date],
+			        MAX(Dim_Date[Date]),
+			        -28,
+			        DAY
+			    )
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 2008c344-7c94-449f-9f9f-acb495b37ac1
+
+	/// Total views for the prior 28 days (29-56 days ago).
+	measure 'Views Prior 28 Days' = ```
+			
+			CALCULATE(
+			    [Press Release Views],
+			    DATESINPERIOD(
+			        Dim_Date[Date],
+			        MAX(Dim_Date[Date]) - 28,
+			        -28,
+			        DAY
+			    )
+			)
+			
+			```
+		formatString: 0
+		lineageTag: d7911109-fc2f-4127-90a5-6c0b96b9cb1a
+
+	/// Change in views: Last 28 days vs Prior 28 days (absolute).
+	measure 'Views Change vs Prior 28' =
+			[Views Last 28 Days] - [Views Prior 28 Days]
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-viewschange28
+		lineageTag: fe9f4aea-b412-4ce4-9664-9982d9bfcf91
+
+	/// Change in views: Last 28 days vs Prior 28 days (percentage).
+	measure 'Views Change % vs Prior 28' = ```
+			
+			IF(
+			    ISBLANK([Views Last 28 Days]) || ISBLANK([Views Prior 28 Days]) || [Views Prior 28 Days] = 0,
+			    BLANK(),
+			    DIVIDE(
+			        [Views Last 28 Days] - [Views Prior 28 Days],
+			        [Views Prior 28 Days]
+			    )
+			)
+			
+			```
+		lineageTag: 2bc517c5-e1b9-45c0-ac0f-b708cc039a21
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Total users for the last 28 days.
+	measure 'Users Last 28 Days' =
+			CALCULATE(
+				[Total Users],
+				DATESINPERIOD(
+					Dim_Date[Date],
+					MAX(Dim_Date[Date]),
+					-28,
+					DAY
+				)
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-userslast28
+		lineageTag: b3cf7caa-e83c-40af-99a6-16ea68af6964
+
+	/// Total users for the prior 28 days (29-56 days ago).
+	measure 'Users Prior 28 Days' =
+			CALCULATE(
+				[Total Users],
+				DATESINPERIOD(
+					Dim_Date[Date],
+					MAX(Dim_Date[Date]) - 28,
+					-28,
+					DAY
+				)
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-usersprior28
+		lineageTag: 0eeede4f-8f89-431f-baa0-af0c8263f845
+
+	/// Change in users: Last 28 days vs Prior 28 days (absolute).
+	measure 'Users Change vs Prior 28' =
+			[Users Last 28 Days] - [Users Prior 28 Days]
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-userschange28
+		lineageTag: c811943b-be2a-4b1d-a5d1-7449256685be
+
+	/// Change in users: Last 28 days vs Prior 28 days (percentage).
+	measure 'Users Change % vs Prior 28' =
+			DIVIDE(
+				[Users Change vs Prior 28],
+				[Users Prior 28 Days],
+				0
+			)
+			formatString: 0.0%
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-userschangepct28
+		lineageTag: 22b42b71-5330-45c5-822d-aa178fc713b4
+
+	/// 7-day rolling average of views.
+	measure '7-Day Rolling Avg Views' =
+			CALCULATE(
+				AVERAGEX(
+					DATESINPERIOD(
+						Dim_Date[Date],
+						MAX(Dim_Date[Date]),
+						-7,
+						DAY
+					),
+					[Total Views]
+				)
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-rolling7avg
+		lineageTag: b0857a28-8465-4493-b261-ab5a3386aa26
+
+	/// 28-day rolling average of views.
+	measure '28-Day Rolling Avg Views' =
+			CALCULATE(
+				AVERAGEX(
+					DATESINPERIOD(
+						Dim_Date[Date],
+						MAX(Dim_Date[Date]),
+						-28,
+						DAY
+					),
+					[Total Views]
+				)
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-rolling28avg
+		lineageTag: 20bc0f4c-e6e4-40d9-a629-94f9cdd4457d
+
+	/// Median views per press release (historical).
+	measure 'Median Views per Release' =
+			MEDIANX(
+				VALUES(Dim_Press_Releases[Page_URL]),
+				[Press Release Views]
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-medianviewsperrelease
+		lineageTag: 3e34c6a6-9ef1-4cbd-be60-f7cbc2e9566d
+
+	/// Median views per release within the same age category.
+	measure 'Median Views per Release (by Age Category)' =
+			VAR CurrentAgeCategory = SELECTEDVALUE(Dim_Press_Releases[Age_Category])
+			RETURN
+			IF(
+				NOT ISBLANK(CurrentAgeCategory),
+				CALCULATE(
+					MEDIANX(
+						FILTER(
+							VALUES(Dim_Press_Releases[Page_URL]),
+							Dim_Press_Releases[Age_Category] = CurrentAgeCategory
+						),
+						[Press Release Views]
+					)
+				),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-medianviewsbyage
+		lineageTag: 2cbb93eb-3741-4be2-8fbf-5db106cca2e5
+
+	/// Average views per day since publication for a press release.
+	measure 'Views per Day Since Publication' =
+			VAR DaysSincePub = SELECTEDVALUE(Dim_Press_Releases[Days_Since_Publication])
+			RETURN
+			IF(
+				NOT ISBLANK(DaysSincePub) && DaysSincePub > 0,
+				DIVIDE([Press Release Views], DaysSincePub, 0),
+				BLANK()
+			)
+			formatString: #,0.0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-viewsperday
+		lineageTag: 64fb40dc-1804-4ce3-a9d5-32b1e8ed4b61
+
+	/// Total views in the first 7 days since publication.
+	measure 'First 7 Days Views' =
+			VAR PubDate = SELECTEDVALUE(Dim_Press_Releases[Publish_Date])
+			RETURN
+			IF(
+				NOT ISBLANK(PubDate),
+				CALCULATE(
+					SUM(Fact_Press_Analytics[Views]),
+					Fact_Press_Analytics[Page_Type] = "Press Release",
+					Fact_Press_Analytics[Date] >= PubDate,
+					Fact_Press_Analytics[Date] <= PubDate + 6
+				),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-first7views
+		lineageTag: a641e66a-c76a-4ad4-9baf-0e3d004a3121
+
+	/// Average views per day in the first 7 days (velocity metric).
+	measure 'First 7 Days Views per Day' =
+			DIVIDE([First 7 Days Views], 7, 0)
+			formatString: #,0.0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-first7viewsperday
+		lineageTag: 0a560e24-ccd4-4854-81a9-d4690343b2f4
+
+	/// Total views in the first 30 days since publication.
+	measure 'First 30 Days Views' =
+			VAR PubDate = SELECTEDVALUE(Dim_Press_Releases[Publish_Date])
+			RETURN
+			IF(
+				NOT ISBLANK(PubDate),
+				CALCULATE(
+					SUM(Fact_Press_Analytics[Views]),
+					Fact_Press_Analytics[Page_Type] = "Press Release",
+					Fact_Press_Analytics[Date] >= PubDate,
+					Fact_Press_Analytics[Date] <= PubDate + 29
+				),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-first30views
+		lineageTag: 12c1fd94-9bef-4cd1-96a4-b13306448bb5
+
+	/// Average views per day in the first 30 days (velocity metric).
+	measure 'First 30 Days Views per Day' =
+			DIVIDE([First 30 Days Views], 30, 0)
+			formatString: #,0.0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-first30viewsperday
+		lineageTag: 99b308f6-33d6-43a7-8195-e9a1bacf0097
+
+	/// Maximum daily views for a press release (peak performance).
+	measure 'Peak Day Views' =
+			VAR SelectedRelease = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
+			RETURN
+			IF(
+				NOT ISBLANK(SelectedRelease),
+				CALCULATE(
+					MAXX(
+						VALUES(Fact_Press_Analytics[Date]),
+						CALCULATE(
+							SUM(Fact_Press_Analytics[Views]),
+							Fact_Press_Analytics[Page_URL] = SelectedRelease,
+							Fact_Press_Analytics[Page_Type] = "Press Release"
+						)
+					)
+				),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-peakdayviews
+		lineageTag: accb0117-a2ba-4fb5-892b-96c83e0ec874
+
+	/// Days until daily views drop below 50% of peak (half-life proxy).
+	measure 'Half-life Proxy (Days)' =
+			VAR SelectedRelease = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
+			VAR Peak = [Peak Day Views]
+			VAR Threshold = Peak * 0.5
+			VAR PubDate = SELECTEDVALUE(Dim_Press_Releases[Publish_Date])
+			RETURN
+			IF(
+				NOT ISBLANK(SelectedRelease) && NOT ISBLANK(Peak) && Peak > 0,
+				VAR DaysSincePub = [Days Since Publication]
+				VAR DaysBelowThreshold =
+					COUNTROWS(
+						FILTER(
+							VALUES(Fact_Press_Analytics[Date]),
+							Fact_Press_Analytics[Date] >= PubDate &&
+							CALCULATE(
+								SUM(Fact_Press_Analytics[Views]),
+								Fact_Press_Analytics[Page_URL] = SelectedRelease,
+								Fact_Press_Analytics[Page_Type] = "Press Release"
+							) < Threshold
+						)
+					)
+				RETURN DaysSincePub - DaysBelowThreshold,
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-halflife
+		lineageTag: 52ace345-5a32-48c8-8bea-35a63c2a5597
+
+	/// Rising Stars ranking: Releases published in last 7-14 days ranked by velocity.
+	measure 'Rising Stars Rank' =
+			VAR SelectedRelease = SELECTEDVALUE(Dim_Press_Releases[Page_URL])
+			VAR DaysSincePub = SELECTEDVALUE(Dim_Press_Releases[Days_Since_Publication])
+			VAR IsRecent = DaysSincePub >= 7 && DaysSincePub <= 14
+			RETURN
+			IF(
+				IsRecent && NOT ISBLANK(SelectedRelease),
+				RANKX(
+					FILTER(
+						ALL(Dim_Press_Releases),
+						Dim_Press_Releases[Days_Since_Publication] >= 7 &&
+						Dim_Press_Releases[Days_Since_Publication] <= 14
+					),
+					[Views per Day Since Publication],
+					,
+					DESC,
+					DENSE
+				),
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 11 - Velocity & Lifecycle
+			lineageTag: pr-m-risingstarsrank
+		lineageTag: 8bd9db0b-6b9a-4c75-bc95-73e6c349fad5
+
+	/// Key Insight Signal: What changed? (e.g., "Organic views are up 18% vs prior 28 days")
+	measure 'Key Insight - Signal' =
+			VAR OrganicChange = [Organic Views Change % vs Prior 28]
+			VAR ViewsChange = [Views Change % vs Prior 28]
+			VAR UsersChange = [Users Change % vs Prior 28]
+			VAR MaxChange = MAX(ABS(OrganicChange), MAX(ABS(ViewsChange), ABS(UsersChange)))
+			RETURN
+			SWITCH(
+				TRUE(),
+				ABS(OrganicChange) >= 0.15 && ABS(OrganicChange) = MaxChange,
+					"Organic views are " &
+					IF(OrganicChange > 0, "up ", "down ") &
+					FORMAT(ABS(OrganicChange), "0%") & " vs prior 28 days",
+				ABS(ViewsChange) >= 0.15 && ABS(ViewsChange) = MaxChange,
+					"Total views are " &
+					IF(ViewsChange > 0, "up ", "down ") &
+					FORMAT(ABS(ViewsChange), "0%") & " vs prior 28 days",
+				ABS(UsersChange) >= 0.15 && ABS(UsersChange) = MaxChange,
+					"Total users are " &
+					IF(UsersChange > 0, "up ", "down ") &
+					FORMAT(ABS(UsersChange), "0%") & " vs prior 28 days",
+				"Metrics are stable vs prior 28 days"
+			)
+			formatString: @
+			displayFolder: 12 - Key Insights
+			lineageTag: pr-m-keyinsight-signal
+		lineageTag: a5632e9f-f688-4af6-bb62-d916b8522284
+
+	/// Organic views change percentage vs prior 28 days (for Key Insights).
+	measure 'Organic Views Change % vs Prior 28' =
+			VAR OrganicLast28 =
+				CALCULATE(
+					[Organic Search Views],
+					DATESINPERIOD(
+						Dim_Date[Date],
+						MAX(Dim_Date[Date]),
+						-28,
+						DAY
+					)
+				)
+			VAR OrganicPrior28 =
+				CALCULATE(
+					[Organic Search Views],
+					DATESINPERIOD(
+						Dim_Date[Date],
+						MAX(Dim_Date[Date]) - 28,
+						-28,
+						DAY
+					)
+				)
+			RETURN
+			DIVIDE(OrganicLast28 - OrganicPrior28, OrganicPrior28, 0)
+			formatString: 0.0%
+			displayFolder: 10 - Performance Context
+			lineageTag: pr-m-organicchange28
+		lineageTag: 3f88eb2f-15ea-4ce9-8756-b547141185de
+
+	/// Key Insight Driver: Why? (e.g., "Driven by 3 releases (A, B, C) and higher SEO share")
+	measure 'Key Insight - Driver' =
+			VAR TopReleasesCount =
+				CALCULATE(
+					DISTINCTCOUNT(Dim_Press_Releases[Page_URL]),
+					FILTER(
+						VALUES(Dim_Press_Releases[Page_URL]),
+						[Press Release Views] >
+							CALCULATE(
+								PERCENTILE.INC([Press Release Views], 0.75),
+								ALL(Dim_Press_Releases)
+							)
+					)
+				)
+			VAR OrganicChange = [Organic Views Change % vs Prior 28]
+			RETURN
+			IF(
+				TopReleasesCount > 0 && ABS(OrganicChange) >= 0.15,
+				"Driven by " & TopReleasesCount & " high-performing releases and " &
+				IF(OrganicChange > 0, "higher ", "lower ") & "SEO share",
+				IF(
+					TopReleasesCount > 0,
+					"Driven by " & TopReleasesCount & " high-performing releases",
+					"Driven by overall traffic trends"
+				)
+			)
+			formatString: @
+			displayFolder: 12 - Key Insights
+			lineageTag: pr-m-keyinsight-driver
+		lineageTag: eb73f7fc-a1fd-4e13-8efd-4dd4ef5f23a9
+
+	/// Key Insight Action: What should we do? (e.g., "Republish/update related evergreen pages; promote via X channel")
+	measure 'Key Insight - Action' =
+			VAR OrganicChange = [Organic Views Change % vs Prior 28]
+			VAR ViewsChange = [Views Change % vs Prior 28]
+			VAR TopChannel =
+				CALCULATE(
+					SELECTEDVALUE(Fact_Press_Analytics[Channel_Group]),
+					TOP1(
+						VALUES(Fact_Press_Analytics[Channel_Group]),
+						CALCULATE(SUM(Fact_Press_Analytics[Views])),
+						DESC
+					)
+				)
+			RETURN
+			SWITCH(
+				TRUE(),
+				OrganicChange > 0.15,
+					"Republish/update related evergreen pages; promote via " &
+					IF(ISBLANK(TopChannel), "top channels", TopChannel),
+				OrganicChange < -0.15,
+					"Review SEO strategy; consider additional organic promotion",
+				ViewsChange > 0.15,
+					"Maintain current promotion strategy; focus on top-performing content",
+				ViewsChange < -0.15,
+					"Investigate traffic decline; review recent content and promotion",
+				"Continue monitoring trends"
+			)
+			formatString: @
+			displayFolder: 12 - Key Insights
+			lineageTag: pr-m-keyinsight-action
+		lineageTag: a9db7159-c9ed-45c4-9898-72d9c6221a59
+
+	/// Combined Key Insights text (for display in single textbox).
+	measure 'Key Insights Combined' =
+			"• " & [Key Insight - Signal] & UNICHAR(10) &
+			"• " & [Key Insight - Driver] & UNICHAR(10) &
+			"• " & [Key Insight - Action]
+		formatString: @
+		displayFolder: 12 - Key Insights
+		lineageTag: pr-m-keyinsights-combined
+
+	/// Velocity score for quadrant chart (Views per Day Since Publication).
+	measure 'Velocity Score' = [Views per Day Since Publication]
+		formatString: #,0.0
+		displayFolder: 13 - Quadrant Analysis
+		lineageTag: pr-m-velocityscore
+
+	/// Volume score for quadrant chart (Total Views).
+	measure 'Volume Score' = [Press Release Views]
+		formatString: #,0
+		displayFolder: 13 - Quadrant Analysis
+		lineageTag: pr-m-volumescore
+
+	/// Engagement score for quadrant chart (Views per User).
+	measure 'Engagement Score' = [Views per User]
+		formatString: 0.0
+		displayFolder: 13 - Quadrant Analysis
+		lineageTag: pr-m-engagementscore
+
+	/// Median velocity across all releases (for quadrant boundary).
+	measure 'Median Velocity' =
+			MEDIANX(
+				VALUES(Dim_Press_Releases[Page_URL]),
+				[Velocity Score]
+			)
+			formatString: #,0.0
+			displayFolder: 13 - Quadrant Analysis
+			lineageTag: pr-m-medianvelocity
+		lineageTag: cbe1656c-4dee-4eb6-bb11-920852f170d1
+
+	/// Median volume across all releases (for quadrant boundary).
+	measure 'Median Volume' =
+			MEDIANX(
+				VALUES(Dim_Press_Releases[Page_URL]),
+				[Volume Score]
+			)
+			formatString: #,0
+			displayFolder: 13 - Quadrant Analysis
+			lineageTag: pr-m-medianvolume
+		lineageTag: d8e42162-8d70-4731-a28d-a40b99a37179
+
+	/// Quadrant categorization: Breakouts, Evergreen Winners, Needs Help, Underperformers.
+	measure Quadrant =
+			VAR V = [Velocity Score]
+			VAR Vol = [Volume Score]
+			VAR VMedian = [Median Velocity]
+			VAR VolMedian = [Median Volume]
+			RETURN
+			SWITCH(
+				TRUE(),
+				NOT ISBLANK(V) && NOT ISBLANK(Vol) &&
+				V >= VMedian && Vol >= VolMedian, "Breakouts",
+				NOT ISBLANK(V) && NOT ISBLANK(Vol) &&
+				V < VMedian && Vol >= VolMedian, "Evergreen Winners",
+				NOT ISBLANK(V) && NOT ISBLANK(Vol) &&
+				V >= VMedian && Vol < VolMedian, "Needs Help",
+				NOT ISBLANK(V) && NOT ISBLANK(Vol), "Underperformers",
+				BLANK()
+			)
+			formatString: @
+			displayFolder: 13 - Quadrant Analysis
+			lineageTag: pr-m-quadrant
+		lineageTag: 48cab632-1432-46b4-b688-4c85d8f07e6d
+
+	/// Views per user for the selected channel.
+	measure 'Views per User by Channel' =
+			VAR SelectedChannel = SELECTEDVALUE(Fact_Press_Analytics[Channel_Group])
+			RETURN
+			IF(
+				NOT ISBLANK(SelectedChannel),
+				DIVIDE(
+					CALCULATE(
+						SUM(Fact_Press_Analytics[Views]),
+						Fact_Press_Analytics[Channel_Group] = SelectedChannel
+					),
+					CALCULATE(
+						SUM(Fact_Press_Analytics[Users]),
+						Fact_Press_Analytics[Channel_Group] = SelectedChannel
+					),
+					0
+				),
+				DIVIDE([Total Views], [Total Users], 0)
+			)
+			formatString: 0.0
+			displayFolder: 04 - Channels
+			lineageTag: pr-m-viewsperuserbychannel
+		lineageTag: b0fefc41-2a41-48c4-92a2-1d6c81d966b9
+
+	/// Sessions per user for the selected channel.
+	measure 'Sessions per User by Channel' =
+			VAR SelectedChannel = SELECTEDVALUE(Fact_Press_Analytics[Channel_Group])
+			RETURN
+			IF(
+				NOT ISBLANK(SelectedChannel),
+				DIVIDE(
+					CALCULATE(
+						SUM(Fact_Press_Analytics[Sessions]),
+						Fact_Press_Analytics[Channel_Group] = SelectedChannel
+					),
+					CALCULATE(
+						SUM(Fact_Press_Analytics[Users]),
+						Fact_Press_Analytics[Channel_Group] = SelectedChannel
+					),
+					0
+				),
+				DIVIDE([Total Sessions], [Total Users], 0)
+			)
+			formatString: 0.0
+			displayFolder: 04 - Channels
+			lineageTag: pr-m-sessionsperuserbychannel
+		lineageTag: ef90c3ce-2917-4dac-a5c9-ba74435fe109
+
+	/// Composite channel efficiency score (0.6 * Views/User + 0.4 * Sessions/User).
+	measure 'Channel Efficiency Score' =
+			0.6 * [Views per User by Channel] + 0.4 * [Sessions per User by Channel]
+			formatString: 0.00
+			displayFolder: 04 - Channels
+			lineageTag: pr-m-channelefficiencyscore
+		lineageTag: e1af15b3-f3d9-432d-9555-849e883376af
+
+	/// Helper measure for image background transparency. Returns 0 for transparent. Note: DAX cannot directly manipulate image transparency - use Power BI image formatting options or edit images externally.
+	measure 'Fill Color (Transparent)' = ```
+			
+			"RGBA(255,255,255,0)"
+			
+			```
+		lineageTag: f1f7f2f3-ddd9-447b-9e6d-10847aa6dafc
+
+	/// Transparency level for background images and decorative elements. Returns 0 (fully opaque). Can be modified to return values 0-100 where 0 is opaque and 100 is fully transparent.
+	measure 'Image Transparency' = 0
+		formatString: 0
+		displayFolder: 00 - Parameters
+		lineageTag: pr-m-imgtransparency
+
+	/// Transparency percentage for overlay elements. Returns 50% semi-transparent. Adjust value to control overlay visibility (0% = opaque, 100% = invisible).
+	measure 'Overlay Transparency' = 50
+		formatString: 0
+		displayFolder: 00 - Parameters
+		lineageTag: pr-m-overlaytransparency
+
+	measure 'Top 10 vs Remaining Views YTD' = ```
+			
+			SWITCH(
+			    SELECTEDVALUE(Top10_Series[Series]),
+			    "Top 10", [Top 10 Views YTD],
+			    "Remaining", [Remaining Views YTD],
+			    BLANK()
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 8c477cb8-c3f6-46be-b43a-94f1e9d1260e
+
+	/// Technical placeholder column for the Metrics calculation table. Hidden from report view.
+	column Placeholder
+		isHidden
+		lineageTag: 0c3efdb1-a35a-4ab5-81b1-2ba77ecb1976
+		isNameInferred
+		sourceColumn: [Placeholder]
+
+	partition Metrics = calculated
+		mode: import
+		source = ROW("Placeholder", BLANK())
+
+	annotation PBI_ResultType = Table
+

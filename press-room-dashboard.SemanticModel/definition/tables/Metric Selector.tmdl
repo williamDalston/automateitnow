@@ -1,0 +1,35 @@
+/// Parameter table for dynamic metric selection in visualizations. Enables users to switch between different KPI measures.
+table 'Metric Selector'
+	lineageTag: pr-param-metric
+
+	/// Display name of the metric shown in the slicer. Select to dynamically switch between different KPIs.
+	column Metric
+		lineageTag: 1183d253-78e5-4f93-aca8-20e197c05e2f
+		isNameInferred
+		sourceColumn: [Metric]
+		sortByColumn: 'Metric Order'
+
+	/// Sort order for metrics in the slicer. Hidden from reports.
+	column 'Metric Order'
+		isHidden
+		lineageTag: 84e1c9e5-a011-4c44-90f3-bb5a7c612700
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Metric Order]
+
+	partition 'Metric Selector' = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "Metric", STRING,
+				    "Metric Order", INTEGER,
+				    {
+				        {"Views", 1},
+				        {"Users", 2},
+				        {"Sessions", 3},
+				        {"Press Releases", 4}
+				    }
+				)
+
+	annotation PBI_ResultType = Table
+

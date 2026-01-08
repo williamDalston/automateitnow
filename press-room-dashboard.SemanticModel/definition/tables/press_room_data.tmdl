@@ -1,0 +1,165 @@
+/// DEPRECATED: Single-day snapshot (Dec 15, 2025) - This data is already included in press_data_with_dates. Hidden for legacy compatibility only. Use press_data_with_dates for all analysis.
+table press_room_data
+	isHidden
+	lineageTag: pr-fact-001
+
+	column Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: pr-col-date
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Page_Path
+		dataType: string
+		lineageTag: pr-col-pagepath
+		summarizeBy: none
+		sourceColumn: Page_Path
+
+		annotation SummarizationSetBy = Automatic
+
+	column Page_Title
+		dataType: string
+		lineageTag: pr-col-pagetitle
+		summarizeBy: none
+		sourceColumn: Page_Title
+
+		annotation SummarizationSetBy = Automatic
+
+	column Views
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-views
+		summarizeBy: sum
+		sourceColumn: Views
+
+		annotation SummarizationSetBy = Automatic
+
+	column Users
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-users
+		summarizeBy: sum
+		sourceColumn: Users
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sessions
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-sessions
+		summarizeBy: sum
+		sourceColumn: Sessions
+
+		annotation SummarizationSetBy = Automatic
+
+	column Avg_Time_On_Page
+		dataType: double
+		formatString: 0.0
+		lineageTag: pr-col-avgtime
+		summarizeBy: average
+		sourceColumn: Avg_Time_On_Page
+
+		annotation SummarizationSetBy = Automatic
+
+	column Entrances
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-entrances
+		summarizeBy: sum
+		sourceColumn: Entrances
+
+		annotation SummarizationSetBy = Automatic
+
+	column Exits
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-exits
+		summarizeBy: sum
+		sourceColumn: Exits
+
+		annotation SummarizationSetBy = Automatic
+
+	column Bounce_Rate
+		dataType: double
+		formatString: 0.0%
+		lineageTag: pr-col-bouncerate
+		summarizeBy: average
+		sourceColumn: Bounce_Rate
+
+		annotation SummarizationSetBy = Automatic
+
+	column New_Users
+		dataType: int64
+		formatString: #,0
+		lineageTag: pr-col-newusers
+		summarizeBy: sum
+		sourceColumn: New_Users
+
+		annotation SummarizationSetBy = Automatic
+
+	column Channel
+		dataType: string
+		lineageTag: pr-col-channel
+		summarizeBy: none
+		sourceColumn: Channel
+
+		annotation SummarizationSetBy = Automatic
+
+	column Source_Medium
+		dataType: string
+		lineageTag: pr-col-sourcemedium
+		summarizeBy: none
+		sourceColumn: Source_Medium
+
+		annotation SummarizationSetBy = Automatic
+
+	column PageType =
+			IF(
+			    CONTAINSSTRING(press_room_data[Page_Path], "/press-room/index"),
+			    "Landing Page",
+			    IF(
+			        CONTAINSSTRING(press_room_data[Page_Path], "/press-releases/"),
+			        "Press Release",
+			        "Other"
+			    )
+			)
+		dataType: string
+		lineageTag: pr-col-pagetype
+
+		annotation SummarizationSetBy = Automatic
+
+	column Press_Release_ID =
+			IF(
+			    CONTAINSSTRING(press_room_data[Page_Path], "/press-releases/"),
+			    RIGHT(
+			        press_room_data[Page_Path],
+			        LEN(press_room_data[Page_Path]) - FIND("/press-releases/", press_room_data[Page_Path]) - 15
+			    ),
+			    BLANK()
+			)
+		dataType: string
+		isHidden
+		lineageTag: pr-col-pressreleaseid
+
+		annotation SummarizationSetBy = Automatic
+
+	partition press_room_data = m
+		mode: import
+		source =
+				let
+				    // DEPRECATED TABLE - This is a legacy single-day snapshot
+				    // Updated to use valid path to prevent errors
+				    // Note: This table is hidden and deprecated - use Fact_Press_Analytics instead
+				    Source = Csv.Document(File.Contents("C:\Users\farad\Dev\WORK\HHS\repos\auto-the-big-one\data\Trending_FILTERED.csv"), [Delimiter=",", Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    // Return empty table since this is deprecated
+				    EmptyTable = #table(type table [Date = date, Page_Path = text, Views = number], {})
+				in
+				    EmptyTable
+
+	annotation PBI_ResultType = Table
+

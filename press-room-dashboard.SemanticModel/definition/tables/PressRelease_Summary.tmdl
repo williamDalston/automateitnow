@@ -1,0 +1,38 @@
+table PressRelease_Summary
+	lineageTag: 8bed2684-79a5-4847-9aae-55a79fc31dce
+
+	column Page_URL
+		lineageTag: bdd70eac-ccc4-4900-be4c-27cbb3ed89f9
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Fact_Press_Analytics[Page_URL]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Views'
+		formatString: 0
+		lineageTag: 3f6309f3-af7c-405d-8744-acc48de3c029
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Total Views]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition PressRelease_Summary = calculated
+		mode: import
+		source = ```
+				
+				SUMMARIZE(
+				    Fact_Press_Analytics,
+				    Fact_Press_Analytics[Page_URL],
+				    "Total Views",
+				        CALCULATE(
+				            SUM(Fact_Press_Analytics[Views]),
+				            Fact_Press_Analytics[Page_Type] = "Press Release"
+				        )
+				)
+				
+				```
+
+	annotation PBI_Id = bf20a289bb9742c18854cb0d3ba7eb11
+

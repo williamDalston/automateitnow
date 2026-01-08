@@ -1,0 +1,20 @@
+/// Helper table for chart categorization. Used in Top 10 vs Remaining chart.
+table Chart_Category
+	lineageTag: chart-category-001
+
+	column Category
+		lineageTag: d12d2095-3962-43ae-8ef7-6b2dc38a0eaf
+		isNameInferred
+		sourceColumn: [Category]
+
+	partition Chart_Category = calculated
+		mode: import
+		source = ```
+					DATATABLE(
+					    "Category", STRING,
+					    {
+					        {"Press Releases"}
+					    }
+					)
+				```
+

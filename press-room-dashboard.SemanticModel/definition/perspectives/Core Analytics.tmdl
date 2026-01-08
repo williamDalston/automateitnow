@@ -1,0 +1,12 @@
+/// Essential tables and measures for press room analytics. Includes primary fact table, date dimension, and all KPI measures.
+perspective 'Core Analytics'
+
+	perspectiveTable Fact_Press_Analytics
+		includeAll
+
+	perspectiveTable Dim_Date
+		includeAll
+
+	perspectiveTable Metrics
+		includeAll
+

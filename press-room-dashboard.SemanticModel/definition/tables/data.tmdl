@@ -1,0 +1,64 @@
+table data
+	lineageTag: a91f81d8-7449-427b-8dce-dd846ad29091
+
+	column Name
+		dataType: string
+		lineageTag: e634c36c-d5eb-4547-83c8-7fcde363e007
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Extension
+		dataType: string
+		lineageTag: 90547f9b-0de1-4a39-8e35-3604f7db9cfd
+		summarizeBy: none
+		sourceColumn: Extension
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date accessed'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: f38e31b1-2560-4916-b7b9-d9b4f494fe5a
+		summarizeBy: none
+		sourceColumn: Date accessed
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date modified'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 2f3890b5-1442-486c-ab7a-976e9d9b3ae0
+		summarizeBy: none
+		sourceColumn: Date modified
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date created'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 8ada7f6e-1684-4623-83d9-cfab563c98aa
+		summarizeBy: none
+		sourceColumn: Date created
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Folder Path'
+		dataType: string
+		lineageTag: 22637744-a0a6-4026-bdc0-7c9dd31b4115
+		summarizeBy: none
+		sourceColumn: Folder Path
+
+		annotation SummarizationSetBy = Automatic
+
+	partition data = m
+		mode: import
+		source =
+				let
+				    Source = Folder.Files("C:\Users\farad\OneDrive\Desktop\press-room\data")
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,125 @@
+/// Primary fact table containing daily press room analytics data with page-level granularity. Includes views, users, sessions across multiple channels and dates. Source: CSV export from GA4.
+table Fact_Press_Analytics
+	lineageTag: 2c40cff1-6f00-4deb-9d37-6d767f3a16ce
+
+	/// Date of the analytics event. Links to Dim_Date for calendar attributes and time intelligence.
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4e61b3ca-560b-4054-93d7-5abce9ee53ce
+		dataCategory: Time
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Full URL path of the press room page (e.g., /press-room/index.html). Used to identify specific pages and press releases.
+	column Page_URL
+		dataType: string
+		lineageTag: 41fd34ce-53e8-4397-8c97-2f2a6729d86b
+		summarizeBy: none
+		sourceColumn: Page_URL
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Traffic source channel (e.g., Organic Search, Direct, Referral, Social, Email). Indicates how users arrived at the page.
+	column Channel_Group
+		dataType: string
+		lineageTag: 2eee500c-a047-4379-8564-dd34454441a5
+		summarizeBy: none
+		sourceColumn: Channel_Group
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Raw GA4 Active Users metric. Hidden - use the 'Users' column instead for reporting.
+	column Active_Users
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e206ec8e-166b-475c-802e-888c09426390
+		summarizeBy: sum
+		sourceColumn: Active_Users
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Total page views (screen views). Counts each time a page is loaded or refreshed. Key metric for measuring content reach.
+	column Views
+		dataType: int64
+		formatString: 0
+		lineageTag: bae0396f-4340-4b7b-a89d-f64a0433fecf
+		summarizeBy: sum
+		sourceColumn: Views
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Formatted press release title derived from Page_URL. Applies proper case formatting and fixes common acronyms (HHS, CDC, FDA, NIH, CMS, HRSA, BARDA, DOGE, mRNA).
+	column Page_Title =
+			VAR CleanPath = IF(CONTAINSSTRING(Fact_Press_Analytics[Page_URL], "/press-room/index"), "Press Room | HHS.gov", SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(Fact_Press_Analytics[Page_URL], "/press-room/", ""), ".html", ""), "-", " "))
+			VAR ProperCase = IF(CleanPath = "Press Room | HHS.gov", CleanPath, TRIM(CONCATENATEX(GENERATESERIES(1, LEN(CleanPath)), VAR CurrentChar = MID(CleanPath, [Value], 1) VAR PrevChar = IF([Value] = 1, " ", MID(CleanPath, [Value] - 1, 1)) RETURN IF(PrevChar = " ", UPPER(CurrentChar), LOWER(CurrentChar)), "")))
+			VAR FixedAcronyms = SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(ProperCase, "Hhs", "HHS"), "Cdc", "CDC"), "Fda", "FDA"), "Nih", "NIH"), "Cms", "CMS"), "Hrsa", "HRSA"), "Barda", "BARDA"), "Prwora", "PRWORA"), "Doge", "DOGE"), "Mrna", "mRNA")
+			RETURN FixedAcronyms
+		dataType: string
+		lineageTag: 812f4156-eaee-4bdb-9e6e-983818b37f73
+		summarizeBy: none
+
+	/// Classification of page: 'Landing Page' (press room index), 'Press Release' (individual releases), or 'Other'. Derived from Page_URL pattern.
+	column Page_Type = IF(CONTAINSSTRING(Fact_Press_Analytics[Page_URL], "/press-room/index"), "Landing Page", IF(CONTAINSSTRING(Fact_Press_Analytics[Page_URL], "/press-room/") && NOT CONTAINSSTRING(Fact_Press_Analytics[Page_URL], "index"), "Press Release", "Other"))
+		dataType: string
+		lineageTag: 4db4e314-75a4-4c9e-91e9-c65f17bc7ea9
+		summarizeBy: none
+
+	/// Unique user count. Mapped from Active_Users for consistency with standard GA4 reporting terminology.
+	column Users = Fact_Press_Analytics[Active_Users]
+		dataType: int64
+		lineageTag: 88c696c7-7c16-4e91-b148-db3c6476aacc
+		summarizeBy: sum
+
+	/// Session count. Approximated from Views for this dataset. Note: GA4 export did not include separate session metric.
+	column Sessions = Fact_Press_Analytics[Views]
+		dataType: int64
+		lineageTag: 9a2ae961-207b-480a-90ef-360208795f5d
+		summarizeBy: sum
+
+	partition press_data_with_dates = m
+		mode: import
+		source = ```
+				let
+				    // PRIMARY DATA SOURCE: Trending_FILTERED.csv (complete dataset: 6.3M views, 754 URLs)
+				    // Path: C:\Users\farad\Dev\WORK\HHS\repos\auto-the-big-one\data\Trending_FILTERED.csv
+				    PrimarySource = Csv.Document(File.Contents("C:\Users\farad\Dev\WORK\HHS\repos\auto-the-big-one\data\Trending_FILTERED.csv"),[Delimiter=",", Columns=4, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Primary Filtered Rows" = Table.SelectRows(PrimarySource, each ([Column2] <> "")),
+				    #"Primary Promoted Headers" = Table.PromoteHeaders(#"Primary Filtered Rows", [PromoteAllScalars=true]),
+				    #"Primary Changed Type" = Table.TransformColumnTypes(#"Primary Promoted Headers",{{"Date", type date}, {"Active users", Int64.Type}, {"Views", Int64.Type}}),
+				    #"Primary Renamed Columns" = Table.RenameColumns(#"Primary Changed Type",{{"Page path and screen class", "Page_URL"}, {"Active users", "Active_Users"}}),
+				    
+				    // CHANNEL DATA SOURCE: press_data_with_dates_CLEAN.csv (channel data: 5.4M views, 285 URLs, already cleaned)
+				    // Path: C:\Users\farad\Dev\WORK\HHS\repos\auto-the-big-one\data\press_data_with_dates_CLEAN.csv
+				    ChannelSource = Csv.Document(File.Contents("C:\Users\farad\Dev\WORK\HHS\repos\auto-the-big-one\data\press_data_with_dates_CLEAN.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Channel Filtered Rows" = Table.SelectRows(ChannelSource, each ([Column2] <> "")),
+				    #"Channel Promoted Headers" = Table.PromoteHeaders(#"Channel Filtered Rows", [PromoteAllScalars=true]),
+				    #"Channel Changed Type" = Table.TransformColumnTypes(#"Channel Promoted Headers",{{"Date", type date}, {"Active users", Int64.Type}, {"Views", Int64.Type}}),
+				    #"Channel Renamed Columns" = Table.RenameColumns(#"Channel Changed Type",{{"Page path and screen class", "Page_URL"}, {"Session default channel group", "Channel_Group"}, {"Active users", "Active_Users"}}),
+				    // Select only Date, Page_URL, and Channel_Group for the join
+				    #"Channel Selected Columns" = Table.SelectColumns(#"Channel Renamed Columns", {"Date", "Page_URL", "Channel_Group"}),
+				    // Remove duplicates (keep first occurrence if same Date+Page_URL has multiple channels)
+				    #"Channel Removed Duplicates" = Table.Distinct(#"Channel Selected Columns", {"Date", "Page_URL"}),
+				    
+				    // MERGE: Left outer join to add channel data where available
+				    #"Merged Queries" = Table.NestedJoin(#"Primary Renamed Columns", {"Date", "Page_URL"}, #"Channel Removed Duplicates", {"Date", "Page_URL"}, "ChannelData", JoinKind.LeftOuter),
+				    #"Expanded ChannelData" = Table.ExpandTableColumn(#"Merged Queries", "ChannelData", {"Channel_Group"}, {"Channel_Group"}),
+				    
+				    // Add default "All Channels" for rows that don't have channel data
+				    #"Added Channel Group Default" = Table.ReplaceValue(#"Expanded ChannelData",null,"All Channels",Replacer.ReplaceValue,{"Channel_Group"}),
+				    
+				    // Schema drift protection: Lock expected columns early
+				    #"Schema Lock" = Table.SelectColumns(#"Added Channel Group Default", {"Date", "Page_URL", "Channel_Group", "Active_Users", "Views"}, MissingField.Error)
+				in
+				    #"Schema Lock"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

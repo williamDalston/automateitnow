@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Central hub -->
+  <circle fill="#005EA2" cx="12" cy="12" r="3"/>
+  <!-- Connection lines -->
+  <path stroke="#005EA2" stroke-width="2" stroke-linecap="round" d="M12 9L12 3M12 15l0 6M9 12L3 12M15 12l6 0"/>
+  <!-- Outer nodes -->
+  <circle fill="#005EA2" cx="12" cy="5" r="2"/>
+  <circle fill="#005EA2" cx="12" cy="19" r="2"/>
+  <circle fill="#005EA2" cx="5" cy="12" r="2"/>
+  <circle fill="#005EA2" cx="19" cy="12" r="2"/>
+  <!-- Diagonal connections -->
+  <path stroke="#005EA2" stroke-width="1.5" stroke-linecap="round" opacity="0.6" d="M9.5 9.5L5.5 5.5M14.5 9.5l4 4M9.5 14.5l-4 4M14.5 14.5l4-4"/>
+</svg>

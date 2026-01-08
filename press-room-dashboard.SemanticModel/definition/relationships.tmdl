@@ -1,0 +1,8 @@
+relationship 'Fact_Press_Analytics[Date] -> Dim_Date[Date]'
+	fromColumn: Fact_Press_Analytics.Date
+	toColumn: Dim_Date.Date
+
+relationship 'Fact_Press_Analytics[Page_URL] -> Dim_Press_Releases[Page_URL]'
+	fromColumn: Fact_Press_Analytics.Page_URL
+	toColumn: Dim_Press_Releases.Page_URL
+

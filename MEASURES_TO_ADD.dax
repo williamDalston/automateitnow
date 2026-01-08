@@ -1,0 +1,123 @@
+// ============================================================================
+// REQUIRED MEASURES FOR TOP 10 VS REMAINING CHART
+// ============================================================================
+// Add these measures to the Metrics table in your semantic model
+// File: press-room-dashboard.SemanticModel/definition/tables/Metrics.tmdl
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Base Measure: Press Release Views
+// ----------------------------------------------------------------------------
+// Total views for press releases only (excludes landing page)
+measure 'Press Release Views' =
+CALCULATE(
+    [Total Views],
+    Fact_Press_Analytics[Page_Type] = "Press Release"
+)
+    formatString: #,0
+    description: "Total page views for all press release pages (excludes landing page)."
+
+// ----------------------------------------------------------------------------
+// 2. Top 10 Press Release Views
+// ----------------------------------------------------------------------------
+// Views from the top 10 press releases by total views
+measure 'Top 10 PR Views' =
+VAR prUrls =
+    CALCULATETABLE(
+        VALUES(Fact_Press_Analytics[Page_URL]),
+        Fact_Press_Analytics[Page_Type] = "Press Release"
+    )
+VAR prTable =
+    ADDCOLUMNS(
+        prUrls,
+        "__Views", [Press Release Views]
+    )
+VAR top10 =
+    TOPN(10, prTable, [__Views], DESC)
+RETURN
+    SUMX(top10, [__Views])
+    formatString: #,0
+    description: "Total views from the top 10 press releases (by views)."
+
+// ----------------------------------------------------------------------------
+// 3. Remaining Press Release Views
+// ----------------------------------------------------------------------------
+// Views from all press releases except the top 10
+measure 'Remaining PR Views' =
+[Press Release Views] - [Top 10 PR Views]
+    formatString: #,0
+    description: "Total views from all press releases except the top 10."
+
+// ----------------------------------------------------------------------------
+// 4. Top 10 Share (KPI Card)
+// ----------------------------------------------------------------------------
+// Percentage of press release views coming from top 10 releases
+measure 'Top 10 Share' =
+DIVIDE([Top 10 PR Views], [Press Release Views], 0)
+    formatString: 0.0%
+    description: "Share of total press release views coming from the top 10 releases."
+
+// ----------------------------------------------------------------------------
+// 5. Top10 Series Value (Chart Y-Axis)
+// ----------------------------------------------------------------------------
+// Switch measure for stacked chart - returns value based on selected series
+measure 'Top10 Series Value' =
+SWITCH(
+    SELECTEDVALUE(Top10_Series[Series]),
+    "Top 10", [Top 10 PR Views],
+    "Remaining", [Remaining PR Views],
+    BLANK()
+)
+    formatString: #,0
+    description: "Dynamic measure for Top 10 vs Remaining stacked chart."
+
+// ============================================================================
+// REQUIRED HELPER TABLE: Top10_Series
+// ============================================================================
+// Add this table to your semantic model
+// File: press-room-dashboard.SemanticModel/definition/tables/Top10_Series.tmdl
+// ============================================================================
+
+table Top10_Series
+    lineageTag: [generate-new-guid]
+
+    column Series
+        dataType: string
+        lineageTag: [generate-new-guid]
+        summarizeBy: none
+
+    partition Top10_Series = calculated
+        mode: import
+        source = 
+            DATATABLE(
+                "Series", STRING,
+                {
+                    {"Top 10"},
+                    {"Remaining"}
+                }
+            )
+
+// ============================================================================
+// OPTIONAL: Month_Year Column (if not exists)
+// ============================================================================
+// Add to Dim_Date table if you don't already have a month-year column
+// File: press-room-dashboard.SemanticModel/definition/tables/Dim_Date.tmdl
+// ============================================================================
+
+column Month_Year = FORMAT(Dim_Date[Date], "MMM YYYY")
+    dataType: string
+    lineageTag: [generate-new-guid]
+    summarizeBy: none
+    sortByColumn: Date
+
+// ============================================================================
+// VALIDATION CHECKLIST
+// ============================================================================
+// [ ] Added all 5 measures to Metrics table
+// [ ] Created Top10_Series helper table
+// [ ] Added Month_Year column to Dim_Date (if needed)
+// [ ] Saved semantic model
+// [ ] Refreshed data in Power BI Desktop
+// [ ] Verified measures return expected values
+// [ ] Tested Top10 Series Value with Top10_Series slicer
+// ============================================================================

@@ -1,0 +1,243 @@
+/// Parameter table for dynamic channel selection in visualizations. Enables users to filter by traffic channel (Organic Search, Direct, Referral, Social, Email).
+table 'Channel Selector'
+	lineageTag: pr-param-channel
+
+	measure 'PR Views Rank' = ```
+			
+			RANKX(
+			    ALL(Dim_Press_Releases[Page_URL]),
+			    CALCULATE(
+			        SUM(Fact_Press_Analytics[Views]),
+			        Fact_Press_Analytics[Page_Type] = "Press Release",
+			        DATESYTD(Dim_Date[Date])
+			    ),
+			    ,
+			    DESC,
+			    DENSE
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 6b379546-e229-4c21-a9a1-3502d8266285
+
+	measure 'Top 10 vs Remaining' = ```
+			
+			SWITCH(
+			    SELECTEDVALUE(Top10_Series[Series]),
+			    "Top 10", [Top 10 Views],
+			    "Remaining", [Remaining Views]
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 257cf399-7b71-4dc8-a84a-475d8364c2ec
+
+	measure 'Press Release Views YTD (Chart)' = ```
+			
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Page_Type] = "Press Release",
+			    DATESYTD(Dim_Date[Date])
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 36c8117f-2afa-4816-8430-cef864c95cf5
+
+	measure 'Top 10 Views YTD' = ```
+			
+			VAR Top10Pages =
+			    TOPN(
+			        10,
+			        SUMMARIZE(
+			            Fact_Press_Analytics,
+			            Fact_Press_Analytics[Page_URL],
+			            "ViewsYTD",
+			                CALCULATE(
+			                    SUM(Fact_Press_Analytics[Views]),
+			                    Fact_Press_Analytics[Page_Type] = "Press Release",
+			                    DATESYTD(Dim_Date[Date])
+			                )
+			        ),
+			        [ViewsYTD],
+			        DESC
+			    )
+			RETURN
+			SUMX(Top10Pages, [ViewsYTD])
+			
+			```
+		formatString: 0
+		lineageTag: 871c6a8b-14f9-44a1-b207-330dee09e548
+
+	measure 'Press Release Views YTD' = ```
+			
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Page_Type] = "Press Release",
+			    DATESYTD(Dim_Date[Date])
+			)
+			
+			```
+		formatString: 0
+		lineageTag: cabba4ba-c318-415d-accf-99cfce060b20
+
+	measure 'Remaining Views YTD' = ```
+			
+			[Press Release Views YTD] - [Top 10 Views YTD]
+			
+			```
+		formatString: 0
+		lineageTag: 54049c00-20c4-4db8-95d2-ff8a2da6c55c
+
+	measure 'Top 10 Views (NO DATE)' = ```
+			
+			VAR Top10Pages =
+			    TOPN(
+			        10,
+			        ADDCOLUMNS(
+			            VALUES(Dim_Press_Releases[Page_URL]),
+			            "Views",
+			                CALCULATE(
+			                    SUM(Fact_Press_Analytics[Views]),
+			                    Fact_Press_Analytics[Page_Type] = "Press Release"
+			                )
+			        ),
+			        [Views],
+			        DESC
+			    )
+			RETURN
+			SUMX(Top10Pages, [Views])
+			
+			```
+		formatString: 0
+		lineageTag: d9bbfc39-c63d-4a75-aa4f-0dc53cf06a15
+
+	measure 'Press Release Views (NO DATE)' = ```
+			
+			CALCULATE(
+			    SUM(Fact_Press_Analytics[Views]),
+			    Fact_Press_Analytics[Page_Type] = "Press Release"
+			)
+			
+			```
+		formatString: 0
+		lineageTag: b61954e8-5d15-41bb-a28b-38cb18638034
+
+	measure 'Top 10 Views' = ```
+			
+			VAR Top10 =
+			    TOPN(
+			        10,
+			        PressRelease_Summary,
+			        PressRelease_Summary[Total Views],
+			        DESC
+			    )
+			RETURN
+			SUMX(Top10, PressRelease_Summary[Total Views])
+			
+			```
+		formatString: 0
+		lineageTag: 8d179129-a1a7-43d3-8312-cce6f4176ff8
+
+	measure 'Remaining Views' = ```
+			
+			[Press Release Views] - [Top 10 Views]
+			
+			```
+		formatString: 0
+		lineageTag: f1540857-68f4-4486-956e-68b06f004b64
+
+	measure 'Top 10 Share' = ```
+			
+			DIVIDE(
+			    [Top 10 Views],
+			    [Press Release Views]
+			)
+			
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 69c979c8-1f5a-4bcc-a88a-b6319a12e5e5
+
+	measure 'Top 10 Concentration Signal' = ```
+			
+			SWITCH(
+			    TRUE(),
+			    [Top 10 Share] >= 0.6, "highly concentrated",
+			    [Top 10 Share] >= 0.4, "moderately concentrated",
+			    "well distributed"
+			)
+			
+			```
+		lineageTag: 14bed69e-a196-4831-8910-f58d73472774
+
+	measure 'Executive Summary' = ```
+			
+			"Press releases generated " &
+			FORMAT([Press Release Views], "#,0") &
+			" total views. The top 10 releases accounted for " &
+			FORMAT([Top 10 Views], "#,0") &
+			" views (" &
+			FORMAT([Top 10 Share], "0.0%") &
+			"), indicating a " &
+			[Top 10 Concentration Signal] &
+			" distribution of attention. Overall performance is " &
+			[Views Trend Word] &
+			"."
+			
+			```
+		lineageTag: a8346bd8-32b0-4559-8316-65f65c427945
+
+	measure 'Views Trend Word' = ```
+			
+			IF(
+			    [Views Change % vs Prior 28] > 0,
+			    "up",
+			    "down"
+			)
+			
+			```
+		lineageTag: 5dc8c3d6-67f4-433d-adb9-451915bb8c60
+
+	measure Measure
+		lineageTag: f4895fbc-5022-4b7e-9e4e-d4a77c4d2d32
+
+		annotation 43dbc3e8-3a1c-4b6f-9923-b49ff7d6691c = True
+
+	measure 'Measure 2'
+		lineageTag: 1a58b174-416d-4f89-b387-2883c82c609c
+
+		annotation 43dbc3e8-3a1c-4b6f-9923-b49ff7d6691c = True
+
+	/// Traffic source channel name (Organic Search, Direct, Referral, Social, Email). Select to filter data by channel.
+	column Channel
+		lineageTag: 9f823b41-34bf-497a-b4d3-24718f78cad5
+		isNameInferred
+		sourceColumn: [Channel]
+		sortByColumn: 'Channel Order'
+
+	/// Sort order for channels in the slicer. Hidden from reports.
+	column 'Channel Order'
+		isHidden
+		lineageTag: 12a3cb30-3cf5-4b86-93a1-20a390f78c07
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Channel Order]
+
+	partition 'Channel Selector' = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "Channel", STRING,
+				    "Channel Order", INTEGER,
+				    {
+				        {"All Channels", 0},
+				        {"Organic Search", 1},
+				        {"Direct", 2},
+				        {"Referral", 3},
+				        {"Organic Social", 4},
+				        {"Email", 5}
+				    }
+				)
+
+	annotation PBI_ResultType = Table
+

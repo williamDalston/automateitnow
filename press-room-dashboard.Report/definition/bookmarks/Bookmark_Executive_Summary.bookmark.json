@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "displayName": "Executive Summary",
+  "name": "Bookmark_Executive_Summary",
+  "options": {
+    "targetVisualNames": [],
+    "suppressActiveSection": true
+  },
+  "explorationState": {
+    "version": "1.0",
+    "activeSection": "home",
+    "sections": {
+      "home": {
+        "visualContainers": {}
+      }
+    }
+  }
+}

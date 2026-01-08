@@ -1,0 +1,43 @@
+/// Helper table for Top 10 vs Remaining press releases distribution pie chart
+table PR_Distribution_Categories
+	lineageTag: pr-dist-001
+
+	/// Dynamic measure that returns the views value for each category
+	measure 'PR Category Views' =
+			VAR SelectedCategory = SELECTEDVALUE(PR_Distribution_Categories[Category])
+			RETURN
+			SWITCH(
+				SelectedCategory,
+				"Top 10", [Top 10 Press Release Views],
+				"Other Releases", [Remaining Press Release Views],
+				BLANK()
+			)
+			formatString: #,0
+			displayFolder: 03 - Distribution
+			lineageTag: pr-dist-catviews
+		lineageTag: 9783c62c-b2a9-4e61-adc3-12e6e65a508c
+
+	column Category
+		lineageTag: 8324121d-78b4-410b-ba27-a07d4aad37ba
+		isNameInferred
+		sourceColumn: [Category]
+
+	column 'Sort Order'
+		lineageTag: 51a1464e-9170-40e8-b43b-90708984ad21
+		isNameInferred
+		sourceColumn: [Sort Order]
+
+	partition PR_Distribution_Categories = calculated
+		mode: import
+		source =
+				DATATABLE(
+					"Category", STRING,
+					"Sort Order", INTEGER,
+					{
+						{"Top 10", 1},
+						{"Other Releases", 2}
+					}
+				)
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,94 @@
+/// Reference dimension table for press releases - contains unique URLs with aggregated metrics and publish dates. Auto-generated from Fact_Press_Analytics to ensure URL uniqueness.
+table Dim_Press_Releases
+	lineageTag: 61125feb-52e0-4b66-b067-2f37ad9bfe74
+
+	column Page_URL
+		lineageTag: 1e51bf5e-f594-4901-ad43-86f89f7069e4
+		isNameInferred
+		sourceColumn: Fact_Press_Analytics[Page_URL]
+
+	column Page_Title
+		lineageTag: 008045a6-7964-4707-9330-5582071acfda
+		isNameInferred
+		sourceColumn: Fact_Press_Analytics[Page_Title]
+
+	column Page_Type
+		lineageTag: 51235575-8611-4794-a62e-463f0c1936be
+		isNameInferred
+		sourceColumn: Fact_Press_Analytics[Page_Type]
+
+	column Total_Views
+		lineageTag: b6705c96-a7dd-40d6-9193-cbd20bab52c3
+		isNameInferred
+		sourceColumn: [Total_Views]
+
+	column Total_Users
+		lineageTag: 9be420a5-ee43-4a22-aeb4-adfbbdccedb8
+		isNameInferred
+		sourceColumn: [Total_Users]
+
+	column Publish_Date
+		lineageTag: e22ec1d8-ef8c-4329-b45e-1f3ceb83496a
+		isNameInferred
+		sourceColumn: [Publish_Date]
+
+	column Days_Since_Publication
+		lineageTag: b8027d99-33b3-403d-a759-66623d23e690
+		isNameInferred
+		sourceColumn: [Days_Since_Publication]
+
+	/// Age category of press release based on Days_Since_Publication. Used for filtering and analysis.
+	column Age_Category =
+			SWITCH(
+			    TRUE(),
+			    Dim_Press_Releases[Days_Since_Publication] <= 7, "New (0-7 days)",
+			    Dim_Press_Releases[Days_Since_Publication] <= 30, "Recent (8-30 days)",
+			    Dim_Press_Releases[Days_Since_Publication] <= 90, "Older (31-90 days)",
+			    "Very Old (90+ days)"
+			)
+		dataType: string
+		lineageTag: age-category-001
+		summarizeBy: none
+
+	/// Views category for filtering. Categorizes press releases by total views.
+	column Views_Category =
+			SWITCH(
+			    TRUE(),
+			    Dim_Press_Releases[Total_Views] <= 100, "Low (0-100)",
+			    Dim_Press_Releases[Total_Views] <= 500, "Medium (101-500)",
+			    Dim_Press_Releases[Total_Views] <= 1000, "High (501-1,000)",
+			    "Very High (1,000+)"
+			)
+		dataType: string
+		lineageTag: views-category-001
+		summarizeBy: none
+
+	partition Dim_Press_Releases = calculated
+		mode: import
+		source = ```
+				ADDCOLUMNS(
+				    SUMMARIZE(
+				        Fact_Press_Analytics,
+				        Fact_Press_Analytics[Page_URL],
+				        Fact_Press_Analytics[Page_Title],
+				        Fact_Press_Analytics[Page_Type],
+				        "Total_Views", SUM(Fact_Press_Analytics[Views]),
+				        "Total_Users", SUM(Fact_Press_Analytics[Users])
+				    ),
+				    "Publish_Date", 
+				        CALCULATE(
+				            MIN(Fact_Press_Analytics[Date]),
+				            ALLEXCEPT(Fact_Press_Analytics, Fact_Press_Analytics[Page_URL])
+				        ),
+				    "Days_Since_Publication",
+				        DATEDIFF(
+				            CALCULATE(
+				                MIN(Fact_Press_Analytics[Date]),
+				                ALLEXCEPT(Fact_Press_Analytics, Fact_Press_Analytics[Page_URL])
+				            ),
+				            TODAY(),
+				            DAY
+				        )
+				)
+				```
+

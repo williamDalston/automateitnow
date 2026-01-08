@@ -1,0 +1,82 @@
+/// Metric Dictionary table providing business definitions, source fields, filters, and grain for all key metrics.
+/// This table makes the metric dictionary accessible directly in Power BI for stakeholders.
+/// Can be displayed as a table visual on a dedicated "About" or "Help" page, or as a tooltip.
+table Metric_Dictionary
+	lineageTag: metric-dictionary-001
+
+	column Metric_Name
+		lineageTag: metric-dict-name-001
+		isNameInferred
+		sourceColumn: [Metric_Name]
+
+	column Business_Definition
+		lineageTag: metric-dict-def-001
+		isNameInferred
+		sourceColumn: [Business_Definition]
+
+	column Source_Field_Measure
+		lineageTag: metric-dict-source-001
+		isNameInferred
+		sourceColumn: [Source_Field_Measure]
+
+	column Filters_Applied
+		lineageTag: metric-dict-filters-001
+		isNameInferred
+		sourceColumn: [Filters_Applied]
+
+	column Grain
+		lineageTag: metric-dict-grain-001
+		isNameInferred
+		sourceColumn: [Grain]
+
+	column Category
+		lineageTag: metric-dict-category-001
+		isNameInferred
+		sourceColumn: [Category]
+
+	partition Metric_Dictionary = calculated
+		mode: import
+		source = ```
+					DATATABLE(
+					    "Metric_Name", STRING,
+					    "Business_Definition", STRING,
+					    "Source_Field_Measure", STRING,
+					    "Filters_Applied", STRING,
+					    "Grain", STRING,
+					    "Category", STRING,
+					    {
+					        {"Total Views", "Total number of page views across all press room pages. Includes both landing pages and press releases.", "SUM(Fact_Press_Analytics[Views])", "None (all pages)", "Daily, page-level", "01 - Core KPIs"},
+					        {"Total Users", "Total number of unique users who visited the press room pages.", "SUM(Fact_Press_Analytics[Users])", "None (all pages)", "Daily, page-level", "01 - Core KPIs"},
+					        {"Total Sessions", "Total number of user sessions on press room pages.", "SUM(Fact_Press_Analytics[Sessions])", "None (all pages)", "Daily, page-level", "01 - Core KPIs"},
+					        {"Landing Page Views", "Total page views for the press room landing page only.", "SUM(Fact_Press_Analytics[Views])", "Page_Type = Landing Page", "Daily, page-level", "01 - Core KPIs"},
+					        {"Press Release Views", "Total page views for all press release pages (excludes landing page).", "SUM(Fact_Press_Analytics[Views])", "Page_Type = Press Release", "Daily, page-level", "01 - Core KPIs"},
+					        {"Press Release Users", "Total unique users for press releases only (excludes landing page users).", "SUM(Fact_Press_Analytics[Users])", "Page_Type = Press Release", "Daily, page-level", "01 - Core KPIs"},
+					        {"# Press Releases", "Count of distinct press releases in the dataset.", "DISTINCTCOUNT(Page_URL)", "Page_Type = Press Release", "Release-level", "01 - Core KPIs"},
+					        {"Views per User", "Average number of page views per unique user. Higher values indicate more engaged users.", "[Total Views] / [Total Users]", "None", "Daily, aggregate", "02 - Engagement"},
+					        {"Sessions per User", "Average number of sessions per unique user.", "[Total Sessions] / [Total Users]", "None", "Daily, aggregate", "02 - Engagement"},
+					        {"New Users", "Count of new users (first-time visitors). NOTE: GA4 export does not distinguish new vs returning users - currently equals Total Users.", "SUM(Fact_Press_Analytics[Users])", "None", "Daily, page-level", "02 - Engagement"},
+					        {"New User Rate", "Percentage of users who are new (first-time visitors). NOTE: Will always show 100% due to GA4 data limitation.", "[New Users] / [Total Users]", "None", "Daily, aggregate", "02 - Engagement"},
+					        {"Landing Page Share %", "Percentage of total views that are landing page views.", "[Landing Page Views] / [Total Views]", "None", "Daily, aggregate", "03 - Distribution"},
+					        {"Press Release Share %", "Percentage of total views that are press release views.", "[Press Release Views] / [Total Views]", "None", "Daily, aggregate", "03 - Distribution"},
+					        {"Avg Views per Release", "Average number of views per press release. Calculated as total PR views divided by count of releases.", "[Press Release Views] / [# Press Releases]", "None", "Release-level, aggregate", "03 - Distribution"},
+					        {"Top 10 Press Release Views", "Total views for the top 10 press releases by views.", "SUM(Views)", "Top 10 by rank", "Release-level", "03 - Distribution"},
+					        {"Top 10 % of Press Release Traffic", "Percentage of press release traffic from top 10 releases.", "[Top 10 Press Release Views] / [Press Release Views]", "None", "Aggregate", "03 - Distribution"},
+					        {"Remaining Press Release Views", "Total views for press releases not in the top 10.", "[Press Release Views] - [Top 10 Press Release Views]", "None", "Aggregate", "03 - Distribution"},
+					        {"Organic Search Views", "Total page views from organic search traffic (Google, Bing, etc.).", "SUM(Views)", "Channel_Group = Organic Search", "Daily, page-level", "04 - Channels"},
+					        {"Direct Views", "Total page views from direct traffic (no referrer, typed URL, bookmarks).", "SUM(Views)", "Channel_Group = Direct", "Daily, page-level", "04 - Channels"},
+					        {"Referral Views", "Total page views from referral traffic (external websites linking to press room).", "SUM(Views)", "Channel_Group = Referral", "Daily, page-level", "04 - Channels"},
+					        {"Social Views", "Total page views from social media traffic (includes Organic Social and Social categories).", "SUM(Views)", "Channel_Group IN {Organic Social, Social}", "Daily, page-level", "04 - Channels"},
+					        {"Email Views", "Total page views from email campaigns.", "SUM(Views)", "Channel_Group = Email", "Daily, page-level", "04 - Channels"},
+					        {"Top Channel (PR)", "Returns the top traffic channel for a specific press release. Used in release detail views and tables.", "MAXX() with channel ranking", "Context: Single press release", "Release-level", "04 - Channels"},
+					        {"Views YTD", "Year-to-date total page views from the start of the current year.", "CALCULATE([Total Views], DATESYTD(Date))", "Date filter: YTD", "Daily, aggregate", "05 - Time Intelligence"},
+					        {"Views SPLY", "Same period last year - total page views for the equivalent period in the previous year.", "CALCULATE([Total Views], SAMEPERIODLASTYEAR(Date))", "Date filter: SPLY", "Daily, aggregate", "05 - Time Intelligence"},
+					        {"Views YoY %", "Year-over-year percentage change in page views compared to the same period last year.", "([Total Views] - [Views SPLY]) / [Views SPLY]", "None", "Aggregate", "05 - Time Intelligence"},
+					        {"Views MTD", "Month-to-date total page views from the start of the current month.", "CALCULATE([Total Views], DATESMTD(Date))", "Date filter: MTD", "Daily, aggregate", "05 - Time Intelligence"},
+					        {"Views This Week", "Total page views for the current week (Sunday through Saturday).", "CALCULATE([Total Views], WEEKDATES())", "Date filter: Current week", "Daily, aggregate", "05 - Time Intelligence"},
+					        {"View Rank", "Ranking of pages by total views (1 = highest views). Uses DENSE ranking to handle ties.", "RANKX(ALL(Page_URL), [Total Views], DESC, DENSE)", "None", "Page-level", "06 - Ranking"},
+					        {"Is Top 10", "Boolean indicator (1 or 0) if the page is in the top 10 by views.", "IF([View Rank] <= 10, Yes, No)", "None", "Page-level", "06 - Ranking"},
+					        {"Is Top 5", "Boolean indicator (1 or 0) if the page is in the top 5 by views.", "IF([View Rank] <= 5, Yes, No)", "None", "Page-level", "06 - Ranking"}
+					    }
+					)
+				```
+
